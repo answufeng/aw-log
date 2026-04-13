@@ -8,7 +8,7 @@ android {
     compileSdk = 35
 
     defaultConfig {
-        minSdk = 24
+        minSdk = 21
         consumerProguardFiles("consumer-rules.pro")
     }
 
@@ -30,16 +30,21 @@ android {
             )
         }
     }
+
+    testOptions {
+        unitTests {
+            isReturnDefaultValues = true
+        }
+    }
 }
 
 dependencies {
-    implementation(libs.core.ktx)
+    api(libs.timber)
     implementation(libs.annotation)
-    implementation(libs.timber)
-    implementation(libs.coroutines.core)
-    implementation(libs.coroutines.android)
 
     testImplementation(libs.junit)
+    testImplementation(libs.mockito.core)
+    testImplementation(libs.mockito.kotlin)
 }
 
 apply(from = "${rootDir}/gradle/publish.gradle")

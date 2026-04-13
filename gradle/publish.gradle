@@ -6,14 +6,20 @@ afterEvaluate {
             release(MavenPublication) {
                 from components.release
 
-                groupId = 'com.github.answufeng.aw-log'
-                artifactId = project.name
+                groupId = 'com.github.answufeng'
+                artifactId = 'aw-log'
                 version = project.findProperty('VERSION_NAME') ?: '1.0.0'
 
                 pom {
-                    name = project.name
-                    description = "aw-log - Logging utility library based on Timber"
+                    name = 'aw-log'
+                    description = 'Android logging utility library based on Timber, providing structured log output, file logging, crash collection and log file management.'
                     url = 'https://github.com/answufeng/aw-log'
+                    inceptionYear = '2026'
+
+                    organization {
+                        name = 'answufeng'
+                        url = 'https://github.com/answufeng'
+                    }
 
                     licenses {
                         license {
@@ -26,14 +32,23 @@ afterEvaluate {
                         developer {
                             id = 'answufeng'
                             name = 'answufeng'
+                            url = 'https://github.com/answufeng'
                         }
                     }
 
                     scm {
                         connection = 'scm:git:https://github.com/answufeng/aw-log.git'
+                        developerConnection = 'scm:git:ssh://github.com/answufeng/aw-log.git'
                         url = 'https://github.com/answufeng/aw-log'
                     }
                 }
+            }
+        }
+
+        repositories {
+            maven {
+                name = "LocalMaven"
+                url = "${rootProject.buildDir}/localMaven"
             }
         }
     }

@@ -9,7 +9,7 @@ android {
 
     defaultConfig {
         applicationId = "com.answufeng.log.demo"
-        minSdk = 24
+        minSdk = 21
         targetSdk = 35
         versionCode = 1
         versionName = "1.0.0"
@@ -42,8 +42,4 @@ dependencies {
     implementation(libs.appcompat)
     implementation(libs.material)
     implementation(libs.constraintlayout)
-    implementation(libs.activity.ktx)
-    implementation(libs.lifecycle.viewmodel.ktx)
-    implementation(libs.lifecycle.runtime.ktx)
-    implementation(libs.coroutines.android)
 }
