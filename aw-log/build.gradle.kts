@@ -8,7 +8,7 @@ android {
     compileSdk = 35
 
     defaultConfig {
-        minSdk = 21
+        minSdk = 24
         consumerProguardFiles("consumer-rules.pro")
     }
 
@@ -47,4 +47,4 @@ dependencies {
     testImplementation(libs.mockito.kotlin)
 }
 
-apply(from = "${rootDir}/gradle/publish.gradle")
+apply(from = "${rootDir}/gradle/publish.gradle.kts")

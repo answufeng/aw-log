@@ -1,5 +1,7 @@
 # aw-log
 
+[![](https://jitpack.io/v/answufeng/aw-log.svg)](https://jitpack.io/#answufeng/aw-log)
+
 基于 [Timber](https://github.com/JakeWharton/timber) 的 Android 结构化日志工具库。
 
 提供 Logcat 调试输出、文件日志持久化、崩溃收集、日志拦截与脱敏、自定义格式化、日志文件管理（压缩/导出/清理）等能力。
@@ -209,7 +211,7 @@ AwLogFileManager → 文件管理（压缩/导出/清理）
 
 ## 兼容性
 
-- minSdk 21+
+- minSdk 24+
 - Kotlin 2.0+
 - Timber 5.0.1
 
