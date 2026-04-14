@@ -107,8 +107,7 @@ class AwLogFileManagerTest {
 
     @Test
     fun `compressOldLogs skips today files`() {
-        val today = java.time.LocalDate.now()
-            .format(java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd"))
+        val today = java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.US).format(java.util.Date())
         File(tempDir, "log_$today.txt").writeText("today's log")
         assertEquals(0, AwLogFileManager.compressOldLogs(tempDir.absolutePath))
         assertTrue(File(tempDir, "log_$today.txt").exists())
@@ -183,5 +182,34 @@ class AwLogFileManagerTest {
         } finally {
             exportDir.deleteRecursively()
         }
+    }
+
+    @Test
+    fun `getAvailableSpace returns non-negative for existing directory`() {
+        val space = AwLogFileManager.getAvailableSpace(tempDir.absolutePath)
+        assertTrue(space >= 0)
+    }
+
+    @Test
+    fun `getAvailableSpace returns 0 for non-existent directory`() {
+        assertEquals(0L, AwLogFileManager.getAvailableSpace("/non/existent/path"))
+    }
+
+    @Test
+    fun `compressOldLogsAsync does not crash`() {
+        val latch = java.util.concurrent.CountDownLatch(1)
+        AwLogFileManager.compressOldLogsAsync(tempDir.absolutePath) {
+            latch.countDown()
+        }
+        latch.await(5, java.util.concurrent.TimeUnit.SECONDS)
+    }
+
+    @Test
+    fun `clearAllAsync does not crash`() {
+        val latch = java.util.concurrent.CountDownLatch(1)
+        AwLogFileManager.clearAllAsync(tempDir.absolutePath) {
+            latch.countDown()
+        }
+        latch.await(5, java.util.concurrent.TimeUnit.SECONDS)
     }
 }

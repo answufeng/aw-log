@@ -8,11 +8,12 @@ android {
     compileSdk = 35
 
     defaultConfig {
-        minSdk = 24
+        minSdk = 21
         consumerProguardFiles("consumer-rules.pro")
     }
 
     compileOptions {
+        isCoreLibraryDesugaringEnabled = true
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
     }
@@ -41,6 +42,7 @@ android {
 dependencies {
     api(libs.timber)
     implementation(libs.annotation)
+    coreLibraryDesugaring(libs.desugar.jdk)
 
     testImplementation(libs.junit)
     testImplementation(libs.mockito.core)

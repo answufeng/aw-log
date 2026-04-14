@@ -18,6 +18,7 @@ class AwLogConfigTest {
         assertNull(config.crashHandler)
         assertEquals(Log.VERBOSE, config.minPriority)
         assertEquals(Log.DEBUG, config.fileMinPriority)
+        assertEquals(3000L, config.flushIntervalMs)
     }
 
     @Test(expected = IllegalArgumentException::class)
@@ -91,5 +92,22 @@ class AwLogConfigTest {
     @Test(expected = IllegalArgumentException::class)
     fun `fileMinPriority rejects invalid value`() {
         AwLogConfig().fileMinPriority = -1
+    }
+
+    @Test
+    fun `flushIntervalMs accepts positive value`() {
+        val config = AwLogConfig()
+        config.flushIntervalMs = 5000
+        assertEquals(5000, config.flushIntervalMs)
+    }
+
+    @Test(expected = IllegalArgumentException::class)
+    fun `flushIntervalMs rejects zero`() {
+        AwLogConfig().flushIntervalMs = 0
+    }
+
+    @Test(expected = IllegalArgumentException::class)
+    fun `flushIntervalMs rejects negative`() {
+        AwLogConfig().flushIntervalMs = -1
     }
 }

@@ -12,7 +12,7 @@
         android:text="aw-log Demo"
         android:textSize="24sp"
         android:textStyle="bold"
-        android:layout_marginBottom="16dp" />
+        android:layout_marginBottom="12dp" />
 
     <ScrollView
         android:id="@+id/scrollView"
@@ -24,6 +24,13 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical">
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Basic"
+                android:textStyle="bold"
+                android:layout_marginBottom="4dp" />
 
             <LinearLayout
                 android:layout_width="match_parent"
@@ -57,20 +64,20 @@
                 android:layout_marginBottom="8dp">
 
                 <Button
-                    android:id="@+id/btnJson"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:text="JSON"
-                    android:textAllCaps="false"
-                    android:layout_marginEnd="4dp" />
-
-                <Button
                     android:id="@+id/btnLambda"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
                     android:text="Lambda"
+                    android:textAllCaps="false"
+                    android:layout_marginEnd="4dp" />
+
+                <Button
+                    android:id="@+id/btnTaggedLambda"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="Tag+Lambda"
                     android:textAllCaps="false"
                     android:layout_marginStart="4dp" />
             </LinearLayout>
@@ -100,11 +107,68 @@
                     android:layout_marginStart="4dp" />
             </LinearLayout>
 
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="JSON"
+                android:textStyle="bold"
+                android:layout_marginTop="8dp"
+                android:layout_marginBottom="4dp" />
+
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="horizontal"
-                android:layout_marginBottom="16dp">
+                android:layout_marginBottom="8dp">
+
+                <Button
+                    android:id="@+id/btnJson"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="JSON (DEBUG)"
+                    android:textAllCaps="false"
+                    android:layout_marginEnd="4dp" />
+
+                <Button
+                    android:id="@+id/btnJsonError"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="JSON (ERROR)"
+                    android:textAllCaps="false"
+                    android:layout_marginStart="4dp" />
+            </LinearLayout>
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Desensitize"
+                android:textStyle="bold"
+                android:layout_marginTop="8dp"
+                android:layout_marginBottom="4dp" />
+
+            <Button
+                android:id="@+id/btnDesensitize"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Test Desensitize (phone/email/password)"
+                android:textAllCaps="false"
+                android:layout_marginBottom="8dp" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="File Management"
+                android:textStyle="bold"
+                android:layout_marginTop="8dp"
+                android:layout_marginBottom="4dp" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:layout_marginBottom="8dp">
 
                 <Button
                     android:id="@+id/btnFileInfo"
@@ -125,18 +189,44 @@
                     android:layout_marginStart="4dp" />
             </LinearLayout>
 
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:layout_marginBottom="8dp">
+
+                <Button
+                    android:id="@+id/btnDiskSpace"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="Disk Space"
+                    android:textAllCaps="false"
+                    android:layout_marginEnd="4dp" />
+
+                <Button
+                    android:id="@+id/btnClearAll"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="Clear All"
+                    android:textAllCaps="false"
+                    android:layout_marginStart="4dp" />
+            </LinearLayout>
+
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:text="Output"
                 android:textStyle="bold"
-                android:layout_marginBottom="8dp" />
+                android:layout_marginTop="8dp"
+                android:layout_marginBottom="4dp" />
 
             <TextView
                 android:id="@+id/tvLog"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:textSize="14sp"
+                android:textSize="13sp"
                 android:fontFamily="monospace"
                 android:background="#F5F5F5"
                 android:padding="8dp" />

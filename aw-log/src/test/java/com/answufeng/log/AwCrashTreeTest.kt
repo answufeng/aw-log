@@ -23,9 +23,6 @@ class AwCrashTreeTest {
     @Test
     fun `AwCrashTree with handler invokes handler on error`() {
         var handlerCalled = false
-        var receivedTag: String? = null
-        var receivedThrowable: Throwable? = null
-        var receivedMessage: String? = null
 
         AwLogger.init {
             debug = false
@@ -33,9 +30,6 @@ class AwCrashTreeTest {
             crashLog = true
             crashHandler = { tag, throwable, message ->
                 handlerCalled = true
-                receivedTag = tag
-                receivedThrowable = throwable
-                receivedMessage = message
             }
         }
 

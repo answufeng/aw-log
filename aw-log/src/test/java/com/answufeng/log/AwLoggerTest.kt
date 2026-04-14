@@ -115,11 +115,9 @@ class AwLoggerTest {
             fileLog = false
             crashLog = false
             addInterceptor(object : AwLogInterceptor {
-                override fun intercept(
-                    priority: Int, tag: String?, message: String, throwable: Throwable?
-                ): AwLogInterceptor.LogResult {
+                override fun intercept(chain: AwLogInterceptor.Chain): AwLogInterceptor.LogResult {
                     intercepted = true
-                    return AwLogInterceptor.LogResult.ACCEPTED
+                    return chain.proceed()
                 }
             })
         }
@@ -129,22 +127,40 @@ class AwLoggerTest {
 
     @Test
     fun `interceptor can reject logs`() {
-        var logReached = false
         AwLogger.init {
             debug = true
             fileLog = false
             crashLog = false
             addInterceptor(object : AwLogInterceptor {
-                override fun intercept(
-                    priority: Int, tag: String?, message: String, throwable: Throwable?
-                ): AwLogInterceptor.LogResult {
-                    return AwLogInterceptor.LogResult.REJECTED
+                override fun intercept(chain: AwLogInterceptor.Chain): AwLogInterceptor.LogResult {
+                    return AwLogInterceptor.LogResult.Rejected("test reject")
                 }
             })
         }
-        // Even if rejected, the Timber call should not crash
         AwLogger.d("test")
-        assertFalse(logReached)
+    }
+
+    @Test
+    fun `interceptor can modify message`() {
+        var receivedMessage: String? = null
+        AwLogger.init {
+            debug = true
+            fileLog = false
+            crashLog = false
+            addInterceptor(object : AwLogInterceptor {
+                override fun intercept(chain: AwLogInterceptor.Chain): AwLogInterceptor.LogResult {
+                    return chain.proceed(message = chain.message.uppercase())
+                }
+            })
+            addInterceptor(object : AwLogInterceptor {
+                override fun intercept(chain: AwLogInterceptor.Chain): AwLogInterceptor.LogResult {
+                    receivedMessage = chain.message
+                    return chain.proceed()
+                }
+            })
+        }
+        AwLogger.d("test")
+        assertEquals("TEST", receivedMessage)
     }
 
     @Test
@@ -190,6 +206,16 @@ class AwLoggerTest {
     }
 
     @Test
+    fun `json with custom priority`() {
+        AwLogger.init {
+            debug = true
+            fileLog = false
+            crashLog = false
+        }
+        AwLogger.json("""{"key":"value"}""", priority = Log.INFO)
+    }
+
+    @Test
     fun `tag returns Timber Tree`() {
         AwLogger.init {
             debug = true
@@ -223,6 +249,21 @@ class AwLoggerTest {
     }
 
     @Test
+    fun `tagged lambda methods work without crash`() {
+        AwLogger.init {
+            debug = true
+            fileLog = false
+            crashLog = false
+        }
+        AwLogger.v("TagV") { "lazy verbose" }
+        AwLogger.d("TagD") { "lazy debug" }
+        AwLogger.i("TagI") { "lazy info" }
+        AwLogger.w("TagW") { "lazy warning" }
+        AwLogger.e("TagE") { "lazy error" }
+        AwLogger.wtf("TagWtf") { "lazy wtf" }
+    }
+
+    @Test
     fun `log with throwable does not crash`() {
         AwLogger.init {
             debug = true
@@ -253,10 +294,8 @@ class AwLoggerTest {
             crashLog = false
             minPriority = Log.ERROR
         }
-        // These should be filtered out by minPriority
         AwLogger.d("should be filtered")
         AwLogger.i("should be filtered")
-        // These should pass
         AwLogger.e("should pass")
         AwLogger.wtf("should pass")
     }

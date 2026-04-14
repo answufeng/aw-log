@@ -150,4 +150,25 @@ class AwFileTreeTest {
         assertTrue(content.contains("custom format test"))
         assertFalse(content.matches(Regex("^\\d{4}-\\d{2}-\\d{2}.*")))
     }
+
+    @Test
+    fun `AwFileTree with custom flushIntervalMs`() {
+        AwLogger.init {
+            debug = false
+            fileLog = true
+            fileDir = tempDir.absolutePath
+            fileMinPriority = android.util.Log.VERBOSE
+            crashLog = false
+            flushIntervalMs = 1000L
+        }
+        AwLogger.i("test with custom flush interval")
+        AwLogger.flush()
+
+        val logFiles = tempDir.listFiles { f -> f.name.startsWith("log_") }
+        assertNotNull(logFiles)
+        assertTrue(logFiles!!.isNotEmpty())
+
+        val content = logFiles[0].readText()
+        assertTrue(content.contains("test with custom flush interval"))
+    }
 }

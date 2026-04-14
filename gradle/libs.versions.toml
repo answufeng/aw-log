@@ -9,6 +9,7 @@ annotation = "1.9.1"
 material = "1.12.0"
 
 timber = "5.0.1"
+desugar-jdk = "2.1.4"
 
 junit = "4.13.2"
 mockito = "5.14.2"
@@ -22,6 +23,7 @@ annotation = { group = "androidx.annotation", name = "annotation", version.ref =
 material = { group = "com.google.android.material", name = "material", version.ref = "material" }
 
 timber = { group = "com.jakewharton.timber", name = "timber", version.ref = "timber" }
+desugar-jdk = { group = "com.android.tools", name = "desugar_jdk_libs", version.ref = "desugar-jdk" }
 
 junit = { group = "junit", name = "junit", version.ref = "junit" }
 mockito-core = { group = "org.mockito", name = "mockito-core", version.ref = "mockito" }

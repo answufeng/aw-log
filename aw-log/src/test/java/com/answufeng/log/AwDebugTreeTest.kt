@@ -71,4 +71,16 @@ class AwDebugTreeTest {
         AwLogger.tag("TestTag").d("tagged message")
         AwLogger.reset()
     }
+
+    @Test
+    fun `AwDebugTree handles tagged lambda logs`() {
+        AwLogger.init {
+            debug = true
+            fileLog = false
+            crashLog = false
+        }
+        AwLogger.d("TestTag") { "tagged lazy debug" }
+        AwLogger.e("TestTag") { "tagged lazy error" }
+        AwLogger.reset()
+    }
 }

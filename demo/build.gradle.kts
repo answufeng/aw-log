@@ -16,6 +16,7 @@ android {
     }
 
     compileOptions {
+        isCoreLibraryDesugaringEnabled = true
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
     }
@@ -37,6 +38,7 @@ android {
 
 dependencies {
     implementation(project(":aw-log"))
+    coreLibraryDesugaring(libs.desugar.jdk)
 
     implementation(libs.core.ktx)
     implementation(libs.appcompat)
