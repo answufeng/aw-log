@@ -1,232 +1,343 @@
 <?xml version="1.0" encoding="utf-8"?>
-<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.coordinatorlayout.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#FAFAFA"
-    android:fillViewport="true">
+    android:background="@color/background">
 
-    <LinearLayout
+    <com.google.android.material.appbar.AppBarLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="vertical"
-        android:padding="16dp">
+        android:background="@color/primary">
 
-        <!-- 标题 -->
-        <TextView
+        <com.google.android.material.appbar.MaterialToolbar
+            android:id="@+id/toolbar"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:gravity="center"
-            android:text="📋 aw-log 日志库演示"
-            android:textSize="22sp"
-            android:textStyle="bold"
-            android:layout_marginBottom="4dp" />
+            android:layout_height="?attr/actionBarSize"
+            android:theme="@style/Toolbar.AwLog"
+            app:title="日志库演示"
+            app:titleTextColor="@color/on_primary" />
 
-        <!-- 副标题 -->
-        <TextView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:gravity="center"
-            android:text="基于Timber · 文件日志 · 脱敏拦截 · 崩溃收集"
-            android:textSize="13sp"
-            android:textColor="#999999"
-            android:layout_marginBottom="16dp" />
+    </com.google.android.material.appbar.AppBarLayout>
 
-        <!-- 操作日志区域 -->
-        <TextView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:background="#2196F3"
-            android:padding="8dp"
-            android:text="📋 操作日志"
-            android:textColor="#FFFFFF"
-            android:textSize="14sp"
-            android:textStyle="bold" />
+    <com.google.android.material.card.MaterialCardView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_margin="16dp"
+        android:layout_marginTop="?attr/actionBarSize"
+        app:layout_behavior="@string/appbar_scrolling_view_behavior"
+        style="@style/Card.AwLog">
 
         <ScrollView
-            android:id="@+id/logScrollView"
             android:layout_width="match_parent"
-            android:layout_height="160dp"
-            android:background="#FFFFFF"
-            android:padding="8dp">
+            android:layout_height="match_parent"
+            android:padding="16dp">
 
-            <TextView
-                android:id="@+id/tvLog"
+            <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:textSize="13sp"
-                android:textColor="#333333"
-                android:fontFamily="monospace"
-                android:text="日志输出：\n" />
+                android:orientation="vertical">
 
+                <!-- 操作日志区域 -->
+                <com.google.android.material.card.MaterialCardView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="16dp"
+                    style="@style/Card.AwLog">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:padding="16dp">
+
+                        <TextView
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:text="操作日志"
+                            style="@style/Text.AwLog.Subtitle"
+                            android:layout_marginBottom="8dp" />
+
+                        <TextView
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:text="基于Timber · 文件日志 · 脱敏拦截 · 崩溃收集"
+                            style="@style/Text.AwLog.Body"
+                            android:layout_marginBottom="12dp" />
+
+                        <ScrollView
+                            android:id="@+id/logScrollView"
+                            android:layout_width="match_parent"
+                            android:layout_height="160dp"
+                            android:background="@color/log_background"
+                            android:padding="8dp">
+
+                            <TextView
+                                android:id="@+id/tvLog"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                style="@style/Text.AwLog.Log"
+                                android:text="日志输出：\n" />
+
+                        </ScrollView>
+
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/btnClearLog"
+                            style="@style/MaterialButton.AwLog.Outlined"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="12dp"
+                            android:text="清除日志" />
+
+                    </LinearLayout>
+                </com.google.android.material.card.MaterialCardView>
+
+                <!-- 基本日志卡片 -->
+                <com.google.android.material.card.MaterialCardView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="16dp"
+                    style="@style/Card.AwLog">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:padding="16dp">
+
+                        <TextView
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:text="基本日志"
+                            style="@style/Text.AwLog.Subtitle"
+                            android:layout_marginBottom="12dp" />
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="horizontal">
+
+                            <com.google.android.material.button.MaterialButton
+                                android:id="@+id/btnDebug"
+                                style="@style/MaterialButton.AwLog.Outlined"
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:text="Debug 日志"
+                                android:layout_marginEnd="4dp" />
+
+                            <com.google.android.material.button.MaterialButton
+                                android:id="@+id/btnError"
+                                style="@style/MaterialButton.AwLog.Outlined"
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:text="Error 日志"
+                                android:layout_marginHorizontal="4dp" />
+
+                        </LinearLayout>
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="horizontal"
+                            android:layout_marginTop="8dp">
+
+                            <com.google.android.material.button.MaterialButton
+                                android:id="@+id/btnLambda"
+                                style="@style/MaterialButton.AwLog.Outlined"
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:text="Lambda 日志"
+                                android:layout_marginEnd="4dp" />
+
+                            <com.google.android.material.button.MaterialButton
+                                android:id="@+id/btnTagged"
+                                style="@style/MaterialButton.AwLog.Outlined"
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:text="带标签日志"
+                                android:layout_marginStart="4dp" />
+
+                        </LinearLayout>
+
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/btnWtf"
+                            style="@style/MaterialButton.AwLog.Outlined"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="8dp"
+                            android:text="WTF 日志" />
+
+                    </LinearLayout>
+                </com.google.android.material.card.MaterialCardView>
+
+                <!-- JSON日志卡片 -->
+                <com.google.android.material.card.MaterialCardView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="16dp"
+                    style="@style/Card.AwLog">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:padding="16dp">
+
+                        <TextView
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:text="JSON 日志"
+                            style="@style/Text.AwLog.Subtitle"
+                            android:layout_marginBottom="12dp" />
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="horizontal">
+
+                            <com.google.android.material.button.MaterialButton
+                                android:id="@+id/btnJsonDebug"
+                                style="@style/MaterialButton.AwLog.Outlined"
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:text="JSON Debug"
+                                android:layout_marginEnd="4dp" />
+
+                            <com.google.android.material.button.MaterialButton
+                                android:id="@+id/btnJsonError"
+                                style="@style/MaterialButton.AwLog.Outlined"
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:text="JSON Error"
+                                android:layout_marginStart="4dp" />
+
+                        </LinearLayout>
+
+                    </LinearLayout>
+                </com.google.android.material.card.MaterialCardView>
+
+                <!-- 脱敏功能卡片 -->
+                <com.google.android.material.card.MaterialCardView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="16dp"
+                    style="@style/Card.AwLog">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:padding="16dp">
+
+                        <TextView
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:text="脱敏功能"
+                            style="@style/Text.AwLog.Subtitle"
+                            android:layout_marginBottom="12dp" />
+
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/btnDesensitize"
+                            style="@style/MaterialButton.AwLog.Outlined"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:text="测试脱敏功能" />
+
+                    </LinearLayout>
+                </com.google.android.material.card.MaterialCardView>
+
+                <!-- 文件管理卡片 -->
+                <com.google.android.material.card.MaterialCardView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="16dp"
+                    style="@style/Card.AwLog">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:padding="16dp">
+
+                        <TextView
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:text="文件管理"
+                            style="@style/Text.AwLog.Subtitle"
+                            android:layout_marginBottom="12dp" />
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="horizontal">
+
+                            <com.google.android.material.button.MaterialButton
+                                android:id="@+id/btnFileInfo"
+                                style="@style/MaterialButton.AwLog.Outlined"
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:text="文件信息"
+                                android:layout_marginEnd="4dp" />
+
+                            <com.google.android.material.button.MaterialButton
+                                android:id="@+id/btnCompress"
+                                style="@style/MaterialButton.AwLog.Outlined"
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:text="压缩日志"
+                                android:layout_marginHorizontal="4dp" />
+
+                        </LinearLayout>
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="horizontal"
+                            android:layout_marginTop="8dp">
+
+                            <com.google.android.material.button.MaterialButton
+                                android:id="@+id/btnDiskSpace"
+                                style="@style/MaterialButton.AwLog.Outlined"
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:text="磁盘空间"
+                                android:layout_marginEnd="4dp" />
+
+                            <com.google.android.material.button.MaterialButton
+                                android:id="@+id/btnFlush"
+                                style="@style/MaterialButton.AwLog.Outlined"
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:text="刷新缓存"
+                                android:layout_marginStart="4dp" />
+
+                        </LinearLayout>
+
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/btnClearLogs"
+                            style="@style/MaterialButton.AwLog"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="8dp"
+                            android:text="清除所有日志文件"
+                            android:backgroundTint="@color/log_error" />
+
+                    </LinearLayout>
+                </com.google.android.material.card.MaterialCardView>
+
+            </LinearLayout>
         </ScrollView>
 
-        <!-- 分类：基本日志 -->
-        <TextView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="📝 基本日志"
-            android:textSize="16sp"
-            android:textStyle="bold"
-            android:textColor="#424242"
-            android:layout_marginTop="16dp"
-            android:layout_marginBottom="8dp" />
+    </com.google.android.material.card.MaterialCardView>
 
-        <Button
-            android:id="@+id/btnDebug"
-            android:layout_width="match_parent"
-            android:layout_height="48dp"
-            android:layout_marginBottom="8dp"
-            android:text="发送 Debug 日志"
-            android:textAllCaps="false" />
-
-        <Button
-            android:id="@+id/btnError"
-            android:layout_width="match_parent"
-            android:layout_height="48dp"
-            android:layout_marginBottom="8dp"
-            android:text="发送 Error 日志(带异常)"
-            android:textAllCaps="false" />
-
-        <Button
-            android:id="@+id/btnLambda"
-            android:layout_width="match_parent"
-            android:layout_height="48dp"
-            android:layout_marginBottom="8dp"
-            android:text="发送 Lambda 日志(延迟计算)"
-            android:textAllCaps="false" />
-
-        <Button
-            android:id="@+id/btnTagged"
-            android:layout_width="match_parent"
-            android:layout_height="48dp"
-            android:layout_marginBottom="8dp"
-            android:text="发送 带标签日志(网络/API/UI)"
-            android:textAllCaps="false" />
-
-        <Button
-            android:id="@+id/btnWtf"
-            android:layout_width="match_parent"
-            android:layout_height="48dp"
-            android:layout_marginBottom="8dp"
-            android:text="发送 WTF 日志"
-            android:textAllCaps="false" />
-
-        <!-- 分类：JSON 日志 -->
-        <TextView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="📄 JSON 日志"
-            android:textSize="16sp"
-            android:textStyle="bold"
-            android:textColor="#424242"
-            android:layout_marginTop="16dp"
-            android:layout_marginBottom="8dp" />
-
-        <Button
-            android:id="@+id/btnJsonDebug"
-            android:layout_width="match_parent"
-            android:layout_height="48dp"
-            android:layout_marginBottom="8dp"
-            android:text="发送 JSON (Debug级别)"
-            android:textAllCaps="false" />
-
-        <Button
-            android:id="@+id/btnJsonError"
-            android:layout_width="match_parent"
-            android:layout_height="48dp"
-            android:layout_marginBottom="8dp"
-            android:text="发送 JSON (Error级别)"
-            android:textAllCaps="false" />
-
-        <!-- 分类：脱敏功能 -->
-        <TextView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="🔒 脱敏功能"
-            android:textSize="16sp"
-            android:textStyle="bold"
-            android:textColor="#424242"
-            android:layout_marginTop="16dp"
-            android:layout_marginBottom="8dp" />
-
-        <Button
-            android:id="@+id/btnDesensitize"
-            android:layout_width="match_parent"
-            android:layout_height="48dp"
-            android:layout_marginBottom="8dp"
-            android:text="测试 脱敏功能(手机号/邮箱/密码)"
-            android:textAllCaps="false" />
-
-        <!-- 分类：文件管理 -->
-        <TextView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="💾 文件管理"
-            android:textSize="16sp"
-            android:textStyle="bold"
-            android:textColor="#424242"
-            android:layout_marginTop="16dp"
-            android:layout_marginBottom="8dp" />
-
-        <Button
-            android:id="@+id/btnFileInfo"
-            android:layout_width="match_parent"
-            android:layout_height="48dp"
-            android:layout_marginBottom="8dp"
-            android:text="查看 日志文件信息"
-            android:textAllCaps="false" />
-
-        <Button
-            android:id="@+id/btnCompress"
-            android:layout_width="match_parent"
-            android:layout_height="48dp"
-            android:layout_marginBottom="8dp"
-            android:text="压缩 旧日志文件"
-            android:textAllCaps="false" />
-
-        <Button
-            android:id="@+id/btnDiskSpace"
-            android:layout_width="match_parent"
-            android:layout_height="48dp"
-            android:layout_marginBottom="8dp"
-            android:text="查看 磁盘空间"
-            android:textAllCaps="false" />
-
-        <Button
-            android:id="@+id/btnClearLogs"
-            android:layout_width="match_parent"
-            android:layout_height="48dp"
-            android:layout_marginBottom="8dp"
-            android:text="清除 所有日志文件"
-            android:textAllCaps="false" />
-
-        <Button
-            android:id="@+id/btnFlush"
-            android:layout_width="match_parent"
-            android:layout_height="48dp"
-            android:layout_marginBottom="8dp"
-            android:text="刷新 日志缓存"
-            android:textAllCaps="false" />
-
-        <!-- 分类：管理 -->
-        <TextView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="🔧 管理"
-            android:textSize="16sp"
-            android:textStyle="bold"
-            android:textColor="#424242"
-            android:layout_marginTop="16dp"
-            android:layout_marginBottom="8dp" />
-
-        <Button
-            android:id="@+id/btnClearLog"
-            android:layout_width="match_parent"
-            android:layout_height="48dp"
-            android:layout_marginBottom="8dp"
-            android:text="🗑️ 清除日志"
-            android:textAllCaps="false" />
-
-    </LinearLayout>
-
-</ScrollView>
+</androidx.coordinatorlayout.widget.CoordinatorLayout>
