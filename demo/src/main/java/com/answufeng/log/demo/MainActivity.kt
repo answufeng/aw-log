@@ -3,12 +3,14 @@ package com.answufeng.log.demo
 import android.os.Bundle
 import android.util.Log
 import android.widget.Button
+import android.widget.LinearLayout
 import android.widget.ScrollView
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import com.answufeng.log.AwDesensitizeInterceptor
 import com.answufeng.log.AwLogger
 import com.answufeng.log.AwLogFileManager
+import com.google.android.material.card.MaterialCardView
 
 /**
  * aw-log 库功能演示
@@ -23,9 +25,69 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        // 查找视图
-        tvLog = findViewById(R.id.tvLog)
+        // 主布局
+        val mainLayout = findViewById<LinearLayout>(R.id.mainLayout)
+
+        // 标题
+        mainLayout.addView(TextView(this).apply {
+            text = "📝 aw-log 功能演示"
+            textSize = 20f
+            setPadding(0, 0, 0, 20)
+        })
+
+        // 基本日志卡片
+        val basicCard = createCard("基本日志")
+        val basicLayout = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
+        basicLayout.addView(createButton("📄 Debug 日志", ::sendDebugLog))
+        basicLayout.addView(createButton("❌ Error 日志", ::sendErrorLog))
+        basicLayout.addView(createButton("⚡ Lambda 日志", ::sendLambdaLog))
+        basicLayout.addView(createButton("🏷️ 带标签日志", ::sendTaggedLog))
+        basicLayout.addView(createButton("😱 WTF 日志", ::sendWtfLog))
+        basicCard.addView(basicLayout)
+        mainLayout.addView(basicCard)
+
+        // JSON 日志卡片
+        val jsonCard = createCard("JSON 日志")
+        val jsonLayout = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
+        jsonLayout.addView(createButton("📋 JSON Debug", ::sendJsonLog))
+        jsonLayout.addView(createButton("📋 JSON Error", ::sendJsonErrorLog))
+        jsonCard.addView(jsonLayout)
+        mainLayout.addView(jsonCard)
+
+        // 脱敏功能卡片
+        val desensitizeCard = createCard("脱敏功能")
+        val desensitizeLayout = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
+        desensitizeLayout.addView(createButton("🔒 测试脱敏", ::testDesensitize))
+        desensitizeCard.addView(desensitizeLayout)
+        mainLayout.addView(desensitizeCard)
+
+        // 文件管理卡片
+        val fileCard = createCard("文件管理")
+        val fileLayout = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
+        fileLayout.addView(createButton("💾 文件信息", ::showFileInfo))
+        fileLayout.addView(createButton("📦 压缩日志", ::compressOldLogs))
+        fileLayout.addView(createButton("💿 磁盘空间", ::checkDiskSpace))
+        fileLayout.addView(createButton("🗑️ 清除日志", ::clearAllLogs))
+        fileLayout.addView(createButton("🔄 刷新日志", ::flushLogs))
+        fileCard.addView(fileLayout)
+        mainLayout.addView(fileCard)
+
+        // 管理功能卡片
+        val manageCard = createCard("管理功能")
+        val manageLayout = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
+        manageLayout.addView(createButton("🗑️ 清除界面日志", ::clearLog))
+        manageCard.addView(manageLayout)
+        mainLayout.addView(manageCard)
+
+        // 日志区域
+        mainLayout.addView(TextView(this).apply {
+            text = "操作日志："
+            textSize = 16f
+            setPadding(0, 20, 0, 10)
+        })
+
         logScrollView = findViewById(R.id.logScrollView)
+        tvLog = findViewById(R.id.tvLog)
 
         // 初始化日志
         AwLogger.init {
@@ -41,37 +103,46 @@ class MainActivity : AppCompatActivity() {
                 keyValue()
             })
         }
+
         log("✅ 日志初始化完成")
-
-        // 基本日志按钮
-        findViewById<Button>(R.id.btnDebug).setOnClickListener { sendDebugLog() }
-        findViewById<Button>(R.id.btnError).setOnClickListener { sendErrorLog() }
-        findViewById<Button>(R.id.btnLambda).setOnClickListener { sendLambdaLog() }
-        findViewById<Button>(R.id.btnTagged).setOnClickListener { sendTaggedLog() }
-        findViewById<Button>(R.id.btnWtf).setOnClickListener { sendWtfLog() }
-
-        // JSON 日志按钮
-        findViewById<Button>(R.id.btnJsonDebug).setOnClickListener { sendJsonLog() }
-        findViewById<Button>(R.id.btnJsonError).setOnClickListener { sendJsonErrorLog() }
-
-        // 脱敏功能按钮
-        findViewById<Button>(R.id.btnDesensitize).setOnClickListener { testDesensitize() }
-
-        // 文件管理按钮
-        findViewById<Button>(R.id.btnFileInfo).setOnClickListener { showFileInfo() }
-        findViewById<Button>(R.id.btnCompress).setOnClickListener { compressOldLogs() }
-        findViewById<Button>(R.id.btnDiskSpace).setOnClickListener { checkDiskSpace() }
-        findViewById<Button>(R.id.btnClearLogs).setOnClickListener { clearAllLogs() }
-        findViewById<Button>(R.id.btnFlush).setOnClickListener { flushLogs() }
-
-        // 管理按钮
-        findViewById<Button>(R.id.btnClearLog).setOnClickListener { clearLog() }
+        log("📊 点击按钮测试各项功能")
     }
 
     override fun onDestroy() {
         super.onDestroy()
         AwLogger.flush()
         log("🔚 日志已刷新")
+    }
+
+    private fun createCard(title: String): MaterialCardView {
+        return MaterialCardView(this).apply {
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+            ).apply {
+                setMargins(0, 0, 0, 16)
+            }
+            setPadding(20, 20, 20, 20)
+
+            addView(TextView(this@MainActivity).apply {
+                text = title
+                textSize = 16f
+                setPadding(0, 0, 0, 12)
+            })
+        }
+    }
+
+    private fun createButton(text: String, onClick: () -> Unit): Button {
+        return Button(this).apply {
+            this.text = text
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+            ).apply {
+                setMargins(0, 4, 0, 4)
+            }
+            setOnClickListener { onClick() }
+        }
     }
 
     private fun log(msg: String) {
@@ -81,8 +152,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun clearLog() {
-        tvLog.text = "日志输出：\n"
-        log("🗑️ 日志已清除")
+        tvLog.text = "日志已清除\n"
     }
 
     private fun sendDebugLog() {
