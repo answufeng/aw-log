@@ -51,11 +51,14 @@
         <item name="cardCornerRadius">12dp</item>
         <item name="cardElevation">4dp</item>
         <item name="cardBackgroundColor">@color/card_background</item>
-        <item name="strokeColor">@color/card_border</color>
+        <item name="strokeColor">@color/card_border</item>
         <item name="strokeWidth">1dp</item>
     </style>
 
     <!-- 标题样式 -->
+    <style name="Text.AwLog" parent="android:Widget.TextView">
+    </style>
+
     <style name="Text.AwLog.Title">
         <item name="android:textSize">20sp</item>
         <item name="android:textStyle">bold</item>
