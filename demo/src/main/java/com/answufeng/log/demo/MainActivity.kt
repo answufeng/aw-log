@@ -1,6 +1,10 @@
 package com.answufeng.log.demo
 
+import android.graphics.Color
 import android.os.Bundle
+import android.text.SpannableString
+import android.text.Spanned
+import android.text.style.ForegroundColorSpan
 import android.util.Log
 import android.widget.ScrollView
 import android.widget.TextView
@@ -12,6 +16,7 @@ import com.answufeng.log.AwLogFormatter
 import com.answufeng.log.AwLogListener
 import com.answufeng.log.AwLogger
 import com.google.android.material.button.MaterialButton
+import java.io.File
 
 class MainActivity : AppCompatActivity() {
 
@@ -21,6 +26,9 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
+
+        val toolbar = findViewById<com.google.android.material.appbar.MaterialToolbar>(R.id.toolbar)
+        setSupportActionBar(toolbar)
 
         tvLog = findViewById(R.id.tvLog)
         logScrollView = findViewById(R.id.logScrollView)
@@ -38,16 +46,19 @@ class MainActivity : AppCompatActivity() {
         findViewById<MaterialButton>(R.id.btnThrowableLambda).setOnClickListener { sendThrowableLambdaLog() }
         findViewById<MaterialButton>(R.id.btnJsonDebug).setOnClickListener { sendJsonLog() }
         findViewById<MaterialButton>(R.id.btnJsonError).setOnClickListener { sendJsonErrorLog() }
+        findViewById<MaterialButton>(R.id.btnXml).setOnClickListener { sendXmlLog() }
         findViewById<MaterialButton>(R.id.btnDesensitize).setOnClickListener { testDesensitize() }
         findViewById<MaterialButton>(R.id.btnLevelFilter).setOnClickListener { testLevelFilter() }
         findViewById<MaterialButton>(R.id.btnFileInfo).setOnClickListener { showFileInfo() }
         findViewById<MaterialButton>(R.id.btnCompress).setOnClickListener { compressOldLogs() }
         findViewById<MaterialButton>(R.id.btnDiskSpace).setOnClickListener { checkDiskSpace() }
         findViewById<MaterialButton>(R.id.btnSearch).setOnClickListener { searchLogs() }
+        findViewById<MaterialButton>(R.id.btnExport).setOnClickListener { exportLogs() }
         findViewById<MaterialButton>(R.id.btnFlush).setOnClickListener { flushLogs() }
         findViewById<MaterialButton>(R.id.btnClearLogs).setOnClickListener { clearAllLogs() }
         findViewById<MaterialButton>(R.id.btnConcurrent).setOnClickListener { testConcurrent() }
         findViewById<MaterialButton>(R.id.btnDynamicLevel).setOnClickListener { testDynamicLevel() }
+        findViewById<MaterialButton>(R.id.btnCustomFormatter).setOnClickListener { testCustomFormatter() }
 
         AwLogger.init {
             debug = true
@@ -71,13 +82,22 @@ class MainActivity : AppCompatActivity() {
                     Log.ASSERT -> "A"
                     else -> "?"
                 }
+                val color = when (priority) {
+                    Log.VERBOSE -> Color.GRAY
+                    Log.DEBUG -> Color.BLUE
+                    Log.INFO -> Color.parseColor("#4CAF50")
+                    Log.WARN -> Color.parseColor("#FF9800")
+                    Log.ERROR -> Color.RED
+                    Log.ASSERT -> Color.parseColor("#9C27B0")
+                    else -> Color.DKGRAY
+                }
                 runOnUiThread {
-                    appendLog("$level/${tag ?: "NoTag"}: $message")
+                    appendColoredLog("$level/${tag ?: "NoTag"}: $message", color)
                 }
             })
         }
 
-        appendLog("日志初始化完成")
+        appendColoredLog("日志初始化完成", Color.parseColor("#4CAF50"))
     }
 
     override fun onDestroy() {
@@ -87,6 +107,14 @@ class MainActivity : AppCompatActivity() {
 
     private fun appendLog(msg: String) {
         tvLog.append("$msg\n")
+        logScrollView.post { logScrollView.fullScroll(ScrollView.FOCUS_DOWN) }
+    }
+
+    private fun appendColoredLog(msg: String, color: Int) {
+        val text = "$msg\n"
+        val spannable = SpannableString(text)
+        spannable.setSpan(ForegroundColorSpan(color), 0, text.length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
+        tvLog.append(spannable)
         logScrollView.post { logScrollView.fullScroll(ScrollView.FOCUS_DOWN) }
     }
 
@@ -123,9 +151,9 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun sendTaggedLog() {
-        AwLogger.d("网络") { "连接超时: https://example.com" }
-        AwLogger.e("API") { "请求失败: 503 服务不可用" }
-        AwLogger.i("UI") { "Activity 创建: ${localClassName}" }
+        AwLogger.d("网络", "连接超时: https://example.com")
+        AwLogger.e("API", "请求失败: 503 服务不可用")
+        AwLogger.i("UI", "Activity 创建: ${localClassName}")
     }
 
     private fun sendFormatLog() {
@@ -148,18 +176,23 @@ class MainActivity : AppCompatActivity() {
         AwLogger.json(errorJson, "API", priority = Log.ERROR)
     }
 
+    private fun sendXmlLog() {
+        val xml = """<response><status>200</status><data><user><id>123</id><name>张三</name></user></data></response>"""
+        AwLogger.xml(xml, "API")
+    }
+
     private fun testDesensitize() {
         AwLogger.i("用户手机号: 13812345678, 邮箱: user@example.com")
         AwLogger.d("登录参数: password=secret123, token=abc123xyz")
     }
 
     private fun testLevelFilter() {
-        val currentLevel = AwLogger.setMinPriority(Log.WARN)
+        val oldLevel = AwLogger.setMinPriority(Log.WARN)
         AwLogger.d("这条 Debug 不会显示")
         AwLogger.i("这条 Info 不会显示")
         AwLogger.w("这条 Warn 会显示")
         AwLogger.e("这条 Error 会显示")
-        AwLogger.setMinPriority(Log.VERBOSE)
+        AwLogger.setMinPriority(oldLevel)
         AwLogger.d("级别已恢复，Debug 可以显示了")
     }
 
@@ -207,11 +240,18 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private fun clearAllLogs() {
+    private fun exportLogs() {
         val logDir = AwLogger.getFileDir()
-        AwLogFileManager.clearAllAsync(logDir) { count ->
+        val exportDir = File(cacheDir, "export")
+        exportDir.mkdirs()
+        val outputFile = File(exportDir, "logs_${System.currentTimeMillis()}.zip")
+        AwLogFileManager.exportLogsAsync(logDir, outputFile) { file ->
             runOnUiThread {
-                appendLog("清除了 $count 个日志文件 (异步)")
+                if (file != null) {
+                    appendLog("日志已导出: ${file.absolutePath} (${file.length() / 1024}KB)")
+                } else {
+                    appendLog("导出失败")
+                }
             }
         }
     }
@@ -219,6 +259,15 @@ class MainActivity : AppCompatActivity() {
     private fun flushLogs() {
         AwLogger.flush()
         appendLog("日志已刷新到磁盘")
+    }
+
+    private fun clearAllLogs() {
+        val logDir = AwLogger.getFileDir()
+        AwLogFileManager.clearAllAsync(logDir) { count ->
+            runOnUiThread {
+                appendLog("清除了 $count 个日志文件 (异步)")
+            }
+        }
     }
 
     private fun testConcurrent() {
@@ -240,9 +289,61 @@ class MainActivity : AppCompatActivity() {
             .setTitle("选择最低日志级别")
             .setItems(items) { _, which ->
                 val (_, level) = levels[which]
-                AwLogger.setMinPriority(level)
-                appendLog("日志级别已设为: ${items[which]}")
+                val oldLevel = AwLogger.setMinPriority(level)
+                appendLog("日志级别已设为: ${items[which]} (之前: ${priorityName(oldLevel)})")
             }
             .show()
+    }
+
+    private fun testCustomFormatter() {
+        AwLogger.init {
+            debug = true
+            fileLog = true
+            fileDir = cacheDir.absolutePath + "/logs"
+            maxFileSize = 2L * 1024 * 1024
+            maxFileCount = 5
+            crashLog = true
+            fileFormatter = AwLogFormatter.compact()
+            addInterceptor(AwDesensitizeInterceptor.create {
+                phone()
+                email()
+                keyValue()
+            })
+            addListener(AwLogListener { priority, tag, message, _ ->
+                val level = when (priority) {
+                    Log.VERBOSE -> "V"
+                    Log.DEBUG -> "D"
+                    Log.INFO -> "I"
+                    Log.WARN -> "W"
+                    Log.ERROR -> "E"
+                    Log.ASSERT -> "A"
+                    else -> "?"
+                }
+                val color = when (priority) {
+                    Log.VERBOSE -> Color.GRAY
+                    Log.DEBUG -> Color.BLUE
+                    Log.INFO -> Color.parseColor("#4CAF50")
+                    Log.WARN -> Color.parseColor("#FF9800")
+                    Log.ERROR -> Color.RED
+                    Log.ASSERT -> Color.parseColor("#9C27B0")
+                    else -> Color.DKGRAY
+                }
+                runOnUiThread {
+                    appendColoredLog("$level/${tag ?: "NoTag"}: $message", color)
+                }
+            })
+        }
+        appendLog("已切换为 compact 格式化器 (HH:mm:ss.SSS)")
+        AwLogger.i("这条日志使用 compact 格式化器写入文件")
+    }
+
+    private fun priorityName(priority: Int): String = when (priority) {
+        Log.VERBOSE -> "VERBOSE"
+        Log.DEBUG -> "DEBUG"
+        Log.INFO -> "INFO"
+        Log.WARN -> "WARN"
+        Log.ERROR -> "ERROR"
+        Log.ASSERT -> "ASSERT"
+        else -> "UNKNOWN"
     }
 }

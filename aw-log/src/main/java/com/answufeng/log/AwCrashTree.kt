@@ -10,7 +10,11 @@ internal class AwCrashTree(
     private val defaultHandler: Thread.UncaughtExceptionHandler? =
         Thread.getDefaultUncaughtExceptionHandler()
 
-    init {
+    private var hasInstalledHandler = false
+
+    fun installCrashHandler() {
+        if (hasInstalledHandler) return
+        hasInstalledHandler = true
         Thread.setDefaultUncaughtExceptionHandler { thread, throwable ->
             try {
                 val tag = "AwCrash"

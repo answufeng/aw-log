@@ -4,6 +4,14 @@ import android.util.Log
 import timber.log.Timber
 import java.util.concurrent.CopyOnWriteArrayList
 
+/**
+ * 日志库入口，基于 Timber 封装的结构化日志工具。
+ *
+ * 支持 Logcat 调试输出、文件日志持久化、崩溃收集、日志拦截与脱敏、
+ * 自定义格式化、JSON/XML 格式化输出等功能。
+ *
+ * 使用前须调用 [init] 进行初始化，推荐在 `Application.onCreate()` 中调用。
+ */
 object AwLogger {
 
     @Volatile
@@ -19,78 +27,119 @@ object AwLogger {
 
     private val listeners = CopyOnWriteArrayList<AwLogListener>()
 
+    /**
+     * 初始化日志系统。通过 DSL 块配置各项参数。
+     *
+     * 重复调用会先关闭旧的 Tree 再重新初始化。线程安全。
+     *
+     * @param block 配置 DSL 块，参见 [AwLogConfig]
+     */
     fun init(block: AwLogConfig.() -> Unit = {}) {
-        val config = AwLogConfig().apply(block)
+        synchronized(this) {
+            val config = AwLogConfig().apply(block)
 
-        if (initialized) {
+            if (initialized) {
+                Timber.forest()
+                    .filterIsInstance<AwFileTree>()
+                    .forEach { it.shutdown() }
+                Log.w("AwLogger", "AwLogger already initialized, re-initializing with new config")
+            }
+
+            Timber.uprootAll()
+
+            minPriority = config.minPriority
+            fileDir = if (config.fileLog) config.fileDir else ""
+            interceptors.clear()
+            interceptors.addAll(config.interceptors)
+            listeners.clear()
+            listeners.addAll(config.listeners)
+
+            if (config.debug) {
+                Timber.plant(AwDebugTree())
+            }
+
+            if (config.fileLog && config.fileDir.isNotBlank()) {
+                Timber.plant(
+                    AwFileTree(
+                        logDir = config.fileDir,
+                        maxFileSize = config.maxFileSize,
+                        maxFileCount = config.maxFileCount,
+                        minPriority = config.fileMinPriority,
+                        formatter = config.fileFormatter,
+                        flushIntervalMs = config.flushIntervalMs
+                    )
+                )
+            }
+
+            if (config.crashLog) {
+                val crashTree = AwCrashTree(config.crashHandler)
+                crashTree.installCrashHandler()
+                Timber.plant(crashTree)
+            }
+
+            config.extraTrees.forEach { Timber.plant(it) }
+
+            initialized = true
+        }
+    }
+
+    /** 日志系统是否已初始化。 */
+    fun isInitialized(): Boolean = initialized
+
+    /**
+     * 重置日志系统，移除所有 Tree、拦截器和监听器。
+     *
+     * 会先关闭文件日志线程池，再清除所有状态。线程安全。
+     */
+    fun reset() {
+        synchronized(this) {
             Timber.forest()
                 .filterIsInstance<AwFileTree>()
                 .forEach { it.shutdown() }
-            Log.w("AwLogger", "AwLogger already initialized, re-initializing with new config")
+            Timber.uprootAll()
+            interceptors.clear()
+            listeners.clear()
+            initialized = false
+            minPriority = Log.VERBOSE
+            fileDir = ""
         }
-
-        Timber.uprootAll()
-
-        minPriority = config.minPriority
-        fileDir = if (config.fileLog) config.fileDir else ""
-        interceptors.clear()
-        interceptors.addAll(config.interceptors)
-        listeners.clear()
-        listeners.addAll(config.listeners)
-
-        if (config.debug) {
-            Timber.plant(AwDebugTree())
-        }
-
-        if (config.fileLog && config.fileDir.isNotBlank()) {
-            Timber.plant(
-                AwFileTree(
-                    logDir = config.fileDir,
-                    maxFileSize = config.maxFileSize,
-                    maxFileCount = config.maxFileCount,
-                    minPriority = config.fileMinPriority,
-                    formatter = config.fileFormatter,
-                    flushIntervalMs = config.flushIntervalMs
-                )
-            )
-        }
-
-        if (config.crashLog) {
-            Timber.plant(AwCrashTree(config.crashHandler))
-        }
-
-        config.extraTrees.forEach { Timber.plant(it) }
-
-        initialized = true
     }
 
-    fun isInitialized(): Boolean = initialized
-
-    fun reset() {
-        Timber.forest()
-            .filterIsInstance<AwFileTree>()
-            .forEach { it.shutdown() }
-        Timber.uprootAll()
-        interceptors.clear()
-        listeners.clear()
-        initialized = false
-        minPriority = Log.VERBOSE
-        fileDir = ""
-    }
-
+    /** 将文件日志缓冲区刷新到磁盘。通常在 Activity.onDestroy() 中调用。 */
     fun flush() {
         Timber.forest()
             .filterIsInstance<AwFileTree>()
             .forEach { it.flush() }
     }
 
-    fun setMinPriority(priority: Int) {
+    /**
+     * 动态设置全局最低日志级别，低于此级别的日志不会输出。
+     *
+     * @param priority 日志级别，取值为 [Log.VERBOSE] 到 [Log.ASSERT]
+     * @return 之前的最低日志级别，方便恢复
+     */
+    fun setMinPriority(priority: Int): Int {
         require(priority >= Log.VERBOSE && priority <= Log.ASSERT) {
             "minPriority must be between ${Log.VERBOSE} and ${Log.ASSERT}, got $priority"
         }
+        val old = minPriority
         minPriority = priority
+        return old
     }
 
+    /**
+     * 判断指定级别的日志是否会被输出。
+     *
+     * 可用于在构造复杂日志对象前判断是否需要记录，避免不必要的开销。
+     *
+     * @param priority 日志级别
+     * @return true 表示该级别的日志会被输出
+     */
+    fun isLoggable(priority: Int): Boolean {
+        return Timber.treeCount > 0 && minPriority <= priority
+    }
+
+    /** 获取文件日志目录路径，未启用文件日志时返回空字符串。 */
     fun getFileDir(): String = fileDir
 
     @PublishedApi
@@ -166,6 +215,10 @@ object AwLogger {
         if (shouldLog(Log.VERBOSE)) logInternal(Log.VERBOSE, message = formatMessage(message, args))
     }
 
+    fun v(tag: String, message: String, vararg args: Any?) {
+        if (shouldLog(Log.VERBOSE)) logInternal(Log.VERBOSE, tag, formatMessage(message, args))
+    }
+
     inline fun v(crossinline message: () -> String) {
         if (shouldLog(Log.VERBOSE)) logInternal(Log.VERBOSE, message = message())
     }
@@ -176,6 +229,10 @@ object AwLogger {
 
     fun d(message: String, vararg args: Any?) {
         if (shouldLog(Log.DEBUG)) logInternal(Log.DEBUG, message = formatMessage(message, args))
+    }
+
+    fun d(tag: String, message: String, vararg args: Any?) {
+        if (shouldLog(Log.DEBUG)) logInternal(Log.DEBUG, tag, formatMessage(message, args))
     }
 
     inline fun d(crossinline message: () -> String) {
@@ -190,6 +247,10 @@ object AwLogger {
         if (shouldLog(Log.INFO)) logInternal(Log.INFO, message = formatMessage(message, args))
     }
 
+    fun i(tag: String, message: String, vararg args: Any?) {
+        if (shouldLog(Log.INFO)) logInternal(Log.INFO, tag, formatMessage(message, args))
+    }
+
     inline fun i(crossinline message: () -> String) {
         if (shouldLog(Log.INFO)) logInternal(Log.INFO, message = message())
     }
@@ -200,6 +261,10 @@ object AwLogger {
 
     fun w(message: String, vararg args: Any?) {
         if (shouldLog(Log.WARN)) logInternal(Log.WARN, message = formatMessage(message, args))
+    }
+
+    fun w(tag: String, message: String, vararg args: Any?) {
+        if (shouldLog(Log.WARN)) logInternal(Log.WARN, tag, formatMessage(message, args))
     }
 
     inline fun w(crossinline message: () -> String) {
@@ -216,6 +281,10 @@ object AwLogger {
 
     fun e(message: String, vararg args: Any?) {
         if (shouldLog(Log.ERROR)) logInternal(Log.ERROR, message = formatMessage(message, args))
+    }
+
+    fun e(tag: String, message: String, vararg args: Any?) {
+        if (shouldLog(Log.ERROR)) logInternal(Log.ERROR, tag, formatMessage(message, args))
     }
 
     inline fun e(crossinline message: () -> String) {
@@ -242,6 +311,10 @@ object AwLogger {
         if (shouldLog(Log.ASSERT)) logInternal(Log.ASSERT, message = formatMessage(message, args))
     }
 
+    fun wtf(tag: String, message: String, vararg args: Any?) {
+        if (shouldLog(Log.ASSERT)) logInternal(Log.ASSERT, tag, formatMessage(message, args))
+    }
+
     inline fun wtf(crossinline message: () -> String) {
         if (shouldLog(Log.ASSERT)) logInternal(Log.ASSERT, message = message())
     }
@@ -254,9 +327,16 @@ object AwLogger {
         if (shouldLog(Log.ASSERT)) logInternal(Log.ASSERT, message = formatMessage(message, args), t = t)
     }
 
+    /**
+     * 格式化输出 JSON 日志，自动识别 JSONObject/JSONArray 并美化输出。
+     *
+     * @param json JSON 字符串，为 null 或空白时输出提示信息
+     * @param tag 日志标签，为 null 时不设置
+     * @param priority 日志级别，默认 [Log.DEBUG]
+     */
     fun json(json: String?, tag: String? = null, priority: Int = Log.DEBUG) {
         if (json.isNullOrBlank()) {
-            logInternal(priority, tag, "${tag?.let { "[$it] " } ?: ""}Empty/Null JSON")
+            logInternal(priority, tag, "Empty/Null JSON")
             return
         }
         try {
@@ -272,7 +352,7 @@ object AwLogger {
             }
             val lines = formatted.split("\n")
             val sb = StringBuilder()
-            sb.appendLine("${tag?.let { "[$it] " } ?: ""}┌────────────────────────────────────")
+            sb.appendLine("┌────────────────────────────────────")
             lines.forEach { line ->
                 sb.appendLine("│ $line")
             }
@@ -283,5 +363,51 @@ object AwLogger {
         } catch (e: Exception) {
             logInternal(Log.ERROR, tag, "JSON format error", e)
         }
+    }
+
+    /**
+     * 格式化输出 XML 日志，自动缩进美化。
+     *
+     * @param xml XML 字符串，为 null 或空白时输出提示信息
+     * @param tag 日志标签，为 null 时不设置
+     * @param priority 日志级别，默认 [Log.DEBUG]
+     */
+    fun xml(xml: String?, tag: String? = null, priority: Int = Log.DEBUG) {
+        if (xml.isNullOrBlank()) {
+            logInternal(priority, tag, "Empty/Null XML")
+            return
+        }
+        try {
+            val trimmed = xml.trim()
+            val formatted = formatXml(trimmed)
+            val lines = formatted.split("\n")
+            val sb = StringBuilder()
+            sb.appendLine("┌────────────────────────────────────")
+            lines.forEach { line ->
+                sb.appendLine("│ $line")
+            }
+            sb.appendLine("└────────────────────────────────────")
+            logInternal(priority, tag, sb.toString())
+        } catch (e: Exception) {
+            logInternal(Log.ERROR, tag, "XML format error", e)
+        }
+    }
+
+    private fun formatXml(xml: String): String {
+        val sb = StringBuilder()
+        var indent = 0
+        val regex = Regex("(<[^>]+>)")
+        val tokens = regex.findAll(xml).map { it.value }.toList()
+        for (token in tokens) {
+            if (token.startsWith("</")) {
+                indent = maxOf(0, indent - 1)
+            }
+            repeat(indent) { sb.append("  ") }
+            sb.appendLine(token)
+            if (token.startsWith("<") && !token.startsWith("</") && !token.endsWith("/>") && !token.contains("</")) {
+                indent++
+            }
+        }
+        return sb.toString().trimEnd()
     }
 }

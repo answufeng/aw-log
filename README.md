@@ -9,17 +9,18 @@
 ## 特性
 
 - **AwDebugTree** — Logcat 输出，自动 Tag 包含方法名与调用位置（一次栈遍历，零冗余）
-- **AwFileTree** — 文件日志，按日期分文件、大小限制轮转、异步写入、智能刷新（定时 + ERROR 即时）、磁盘空间检查
+- **AwFileTree** — 文件日志，按日期分文件、大小限制轮转、异步写入、智能刷新（定时 + ERROR 即时）、磁盘空间检查、队列溢出保护
 - **AwCrashTree** — 崩溃收集（UncaughtExceptionHandler + ERROR 级别捕获），支持自定义回调（可对接 Firebase Crashlytics、Bugly 等）
 - **AwLogInterceptor** — 责任链模式拦截器，支持过滤、脱敏、消息增强、Tag 修改，异常自动隔离
 - **AwDesensitizeInterceptor** — 内置脱敏拦截器，预置手机号/身份证/银行卡/邮箱/key=value 规则（带词边界匹配）
 - **AwLogFormatter** — 自定义日志格式化，可定制时间格式、分隔符、显示字段、线程信息
 - **AwLogFileManager** — 压缩旧日志、导出为 ZIP、查询大小、批量清理、按日期清理、关键词搜索，支持异步操作
 - **AwLogListener** — 日志监听器，实时获取日志输出（UI 展示、远程上报）
-- **JSON 格式化** — 自动识别 JSONObject/JSONArray 并美化输出，支持指定日志级别
+- **JSON / XML 格式化** — 自动识别 JSONObject/JSONArray 并美化输出，支持 XML 美化，支持指定日志级别
 - **Lambda 延迟求值** — 关闭日志时零开销，支持 Lambda + Tag 组合
 - **DSL 配置** — 简洁优雅的初始化方式
-- **动态级别调整** — 运行时修改日志级别，无需重新初始化
+- **动态级别调整** — 运行时修改日志级别，`setMinPriority` 返回旧值方便恢复
+- **isLoggable** — 判断指定级别是否会被输出，避免不必要的日志构造开销
 - **minSdk 24+** — 覆盖 99%+ 的 Android 设备
 
 ## 引入
@@ -85,6 +86,11 @@ AwLogger.d("请求成功")
 AwLogger.e(exception, "请求失败")
 AwLogger.i("用户登录: userId=%d", userId)
 
+// 带 Tag 的日志（支持 String.format 格式化）
+AwLogger.d("Network", "连接超时: %s", url)
+AwLogger.e("API", "请求失败: 状态码 %d", 503)
+AwLogger.i("UI", "Activity 创建: %s", localClassName)
+
 // Lambda 延迟求值（日志关闭时不会执行 Lambda）
 AwLogger.d { "响应: ${response.body}" }
 
@@ -101,11 +107,22 @@ AwLogger.json(jsonString, "API")
 // JSON 格式化（指定级别）
 AwLogger.json(jsonString, "API", priority = Log.ERROR)
 
+// XML 格式化
+AwLogger.xml(xmlString, "API")
+
 // WTF 级别
 AwLogger.wtf("不应该到达的分支")
 
-// 动态修改日志级别
-AwLogger.setMinPriority(Log.WARN)
+// 动态修改日志级别（返回旧值，方便恢复）
+val oldLevel = AwLogger.setMinPriority(Log.WARN)
+// ... 只记录 WARN 及以上
+AwLogger.setMinPriority(oldLevel)  // 恢复
+
+// 判断是否会被记录（避免不必要的日志构造开销）
+if (AwLogger.isLoggable(Log.DEBUG)) {
+    val expensiveData = computeExpensiveDebugInfo()
+    AwLogger.d(expensiveData)
+}
 
 // 获取文件日志目录
 val logDir = AwLogger.getFileDir()
@@ -330,20 +347,39 @@ AwLogListener                  → 日志监听器（实时回调）
 ## 性能优化
 
 - **拦截器单次执行**：拦截仅在 AwLogger 层执行一次，Tree 不再重复拦截
-- **智能文件刷新**：ScheduledExecutorService 定时刷新（默认 3 秒）+ ERROR 级别即时 flush
+- **智能文件刷新**：ScheduledThreadPoolExecutor 定时刷新（默认 3 秒）+ ERROR 级别即时 flush
 - **Lambda 零开销**：日志关闭时 Lambda 完全不执行
-- **零临时对象**：Formatter 使用 SimpleDateFormat + System.currentTimeMillis()，避免 LocalDateTime 分配
+- **线程安全格式化**：SimpleDateFormat 使用 ThreadLocal 包装，消除多线程竞争
 - **单次栈遍历**：AwDebugTree 将方法位置信息编码到 Tag 中，消除双重栈遍历
 - **异常隔离**：拦截器链中任一拦截器异常不会中断链路
-- **内存文件大小追踪**：避免每次写入时调用 file.length() IO 操作
+- **内存文件大小追踪**：避免每次写入时调用 file.length() IO 操作（含 throwable 堆栈字节数）
+- **队列溢出保护**：AwFileTree 日志队列最大 1024 条，满时丢弃最旧日志并输出警告，防止 OOM
+- **单线程池**：AwFileTree 合并写入和调度为单个 ScheduledThreadPoolExecutor，减少线程开销
 - **周期性文件清理**：每 100 次写入检查一次文件数量，避免高频日志场景下的性能开销
 - **共享线程池**：AwLogFileManager 异步操作使用共享线程池，避免频繁创建线程
 
 ## 兼容性
 
-- minSdk 24+
-- Kotlin 2.0+
-- Timber 5.0.1
+| 依赖 | 最低版本 |
+|------|----------|
+| Android minSdk | 24+ |
+| Kotlin | 2.0+ |
+| Timber | 5.0.1 |
+| Android Gradle Plugin | 8.0+ |
+
+### ProGuard / R8
+
+不需要额外配置。库已通过 `consumer-rules.pro` 自动配置 ProGuard 规则，引入依赖即生效。
+
+## 迁移指南（1.x → 2.x）
+
+| 变更 | 1.x | 2.x |
+|------|-----|-----|
+| Tag 设置 | `AwLogger.tag("MyTag").d("msg")` | `AwLogger.d("MyTag", "msg")` 或 `AwLogger.d("MyTag") { "msg" }` |
+| 格式化日志 | `AwLogger.d(String.format("id=%d", id))` | `AwLogger.d("id=%d", id)` 或 `AwLogger.d("Tag", "id=%d", id)` |
+| setMinPriority | `AwLogger.setMinPriority(Log.WARN)` | `val old = AwLogger.setMinPriority(Log.WARN)` (返回旧值) |
+| isLoggable | 无 | `AwLogger.isLoggable(Log.DEBUG)` |
+| XML 格式化 | 无 | `AwLogger.xml(xmlString, "Tag")` |
 
 ## FAQ
 
@@ -366,7 +402,13 @@ AwLogger.init {
 ```
 
 **Q: ProGuard/R8 需要额外配置吗？**
-A: 不需要。库已通过 `consumer-rules.pro` 自动配置 ProGuard 规则。
+A: 不需要。库已通过 `consumer-rules.pro` 自动配置 ProGuard 规则，引入依赖即生效。
+
+**Q: 日志暴增时会不会 OOM？**
+A: 不会。AwFileTree 内部队列最大 1024 条，满时会丢弃最旧日志并输出警告到 Logcat。
+
+**Q: 多线程写日志安全吗？**
+A: 安全。SimpleDateFormat 使用 ThreadLocal 包装，AwLogger.init() 使用 synchronized 保护，文件写入在单线程执行器中串行执行。
 
 ## 许可证
 

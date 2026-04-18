@@ -28,7 +28,13 @@ class AwDesensitizeInterceptor private constructor(
      * [HASH] 取字符串的 hashCode 十六进制表示。
      */
     enum class Strategy(val mask: (String) -> String) {
-        PARTIAL({ s -> s.take(3) + "****" + s.takeLast(4) }),
+        PARTIAL({ s ->
+            when {
+                s.length <= 4 -> "****"
+                s.length <= 7 -> s.take(2) + "****"
+                else -> s.take(3) + "****" + s.takeLast(4)
+            }
+        }),
         FULL({ _ -> "******" }),
         HASH({ s -> s.hashCode().toString(16) })
     }

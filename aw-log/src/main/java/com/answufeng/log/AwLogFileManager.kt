@@ -1,5 +1,7 @@
 package com.answufeng.log
 
+import android.util.Log
+import androidx.annotation.WorkerThread
 import java.io.BufferedInputStream
 import java.io.BufferedOutputStream
 import java.io.File
@@ -16,6 +18,8 @@ import java.util.zip.ZipOutputStream
 
 object AwLogFileManager {
 
+    private const val TAG = "AwLogFileManager"
+
     private val dateFormatter = SimpleDateFormat("yyyy-MM-dd", Locale.US)
 
     private val executor: ExecutorService =
@@ -23,6 +27,7 @@ object AwLogFileManager {
             Thread(runnable, "AwLog-FileManager").apply { isDaemon = true }
         }
 
+    @WorkerThread
     @JvmStatic
     fun compressOldLogs(logDir: String): Int {
         val dir = File(logDir)
@@ -49,7 +54,8 @@ object AwLogFileManager {
                 }
                 file.delete()
                 count++
-            } catch (_: Exception) {
+            } catch (e: Exception) {
+                Log.w(TAG, "Failed to compress log file: ${file.name}", e)
             }
         }
         return count
@@ -82,6 +88,7 @@ object AwLogFileManager {
         return dir.usableSpace
     }
 
+    @WorkerThread
     @JvmStatic
     fun exportLogs(logDir: String, outputFile: File): File? {
         val dir = File(logDir)
@@ -96,20 +103,26 @@ object AwLogFileManager {
         return try {
             ZipOutputStream(BufferedOutputStream(FileOutputStream(outputFile), BUFFER_SIZE)).use { zipOut ->
                 for (file in logFiles) {
-                    BufferedInputStream(FileInputStream(file), BUFFER_SIZE).use { input ->
-                        val entry = ZipEntry(file.name)
-                        zipOut.putNextEntry(entry)
-                        input.copyTo(zipOut, BUFFER_SIZE)
-                        zipOut.closeEntry()
+                    try {
+                        BufferedInputStream(FileInputStream(file), BUFFER_SIZE).use { input ->
+                            val entry = ZipEntry(file.name)
+                            zipOut.putNextEntry(entry)
+                            input.copyTo(zipOut, BUFFER_SIZE)
+                            zipOut.closeEntry()
+                        }
+                    } catch (e: Exception) {
+                        Log.w(TAG, "Failed to add file to zip: ${file.name}", e)
                     }
                 }
             }
             outputFile
-        } catch (_: Exception) {
+        } catch (e: Exception) {
+            Log.w(TAG, "Failed to export logs", e)
             null
         }
     }
 
+    @WorkerThread
     @JvmStatic
     fun clearAll(logDir: String): Int {
         val dir = File(logDir)
@@ -120,10 +133,12 @@ object AwLogFileManager {
             ?.filter { it.isFile && it.name.startsWith("log_") }
             ?.forEach {
                 if (it.delete()) count++
+                else Log.w(TAG, "Failed to delete log file: ${it.name}")
             }
         return count
     }
 
+    @WorkerThread
     @JvmStatic
     fun clearBefore(logDir: String, beforeDate: Date): Int {
         val dir = File(logDir)
@@ -135,10 +150,12 @@ object AwLogFileManager {
             ?.filter { it.isFile && it.name.startsWith("log_") && it.lastModified() < cutoff }
             ?.forEach {
                 if (it.delete()) count++
+                else Log.w(TAG, "Failed to delete old log file: ${it.name}")
             }
         return count
     }
 
+    @WorkerThread
     @JvmStatic
     fun search(logDir: String, keyword: String, maxResults: Int = 100): List<String> {
         val dir = File(logDir)
@@ -157,7 +174,8 @@ object AwLogFileManager {
                         results.add("[${file.name}] $line")
                     }
                 }
-            } catch (_: Exception) {
+            } catch (e: Exception) {
+                Log.w(TAG, "Failed to search in file: ${file.name}", e)
             }
             if (results.size >= maxResults) break
         }

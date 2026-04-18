@@ -26,7 +26,6 @@
     public static *** e(...);
     public static *** wtf(...);
     public static *** json(...);
-    public static *** tag(...);
     public static *** init(...);
     public static *** flush(...);
     public static *** reset(...);

@@ -1,58 +1,67 @@
 <?xml version="1.0" encoding="utf-8"?>
-<ScrollView xmlns:android="http://schemas.android.com/apk/res/android" xmlns:app="http://schemas.android.com/apk/res-auto" android:layout_width="match_parent" android:layout_height="match_parent" android:background="@color/background" android:fillViewport="true">
-    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:padding="16dp">
-        <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:text="实时日志" style="@style/Text.AwLog.Subtitle" android:layout_marginBottom="8dp" />
-        <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:text="基于 Timber · 文件日志 · 脱敏拦截 · 崩溃收集" style="@style/Text.AwLog.Body" android:layout_marginBottom="12dp" />
-        <ScrollView android:id="@+id/logScrollView" android:layout_width="match_parent" android:layout_height="200dp" android:background="@color/log_background" android:padding="8dp">
-            <TextView android:id="@+id/tvLog" android:layout_width="match_parent" android:layout_height="wrap_content" style="@style/Text.AwLog.Log" android:text="" />
-        </ScrollView>
-        <com.google.android.material.button.MaterialButton android:id="@+id/btnClearLog" style="@style/MaterialButton.AwLog.Outlined" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="12dp" android:layout_marginBottom="16dp" android:text="清除日志" />
-        <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:text="基本日志" style="@style/Text.AwLog.Subtitle" android:layout_marginBottom="12dp" />
-        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal">
-            <com.google.android.material.button.MaterialButton android:id="@+id/btnVerbose" style="@style/MaterialButton.AwLog.Outlined" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="Verbose" android:layout_marginEnd="4dp" />
-            <com.google.android.material.button.MaterialButton android:id="@+id/btnDebug" style="@style/MaterialButton.AwLog.Outlined" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="Debug" android:layout_marginHorizontal="4dp" />
-            <com.google.android.material.button.MaterialButton android:id="@+id/btnInfo" style="@style/MaterialButton.AwLog.Outlined" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="Info" android:layout_marginStart="4dp" />
+<androidx.coordinatorlayout.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android" xmlns:app="http://schemas.android.com/apk/res-auto" android:layout_width="match_parent" android:layout_height="match_parent" android:background="@color/background">
+    <com.google.android.material.appbar.AppBarLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:theme="@style/ThemeOverlay.Material3.Dark">
+        <com.google.android.material.appbar.MaterialToolbar android:id="@+id/toolbar" android:layout_width="match_parent" android:layout_height="?attr/actionBarSize" app:title="aw-log 演示" app:subtitle="基于 Timber · 文件日志 · 脱敏拦截 · 崩溃收集" />
+    </com.google.android.material.appbar.AppBarLayout>
+    <androidx.core.widget.NestedScrollView android:layout_width="match_parent" android:layout_height="match_parent" app:layout_behavior="@string/appbar_scrolling_view_behavior">
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:padding="16dp">
+            <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:text="实时日志" style="@style/Text.AwLog.Subtitle" android:layout_marginBottom="8dp" />
+            <ScrollView android:id="@+id/logScrollView" android:layout_width="match_parent" android:layout_height="200dp" android:background="@color/log_background" android:padding="8dp">
+                <TextView android:id="@+id/tvLog" android:layout_width="match_parent" android:layout_height="wrap_content" style="@style/Text.AwLog.Log" android:text="" />
+            </ScrollView>
+            <com.google.android.material.button.MaterialButton android:id="@+id/btnClearLog" style="@style/MaterialButton.AwLog.Outlined" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="12dp" android:layout_marginBottom="16dp" android:text="清除日志" />
+            <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:text="基本日志" style="@style/Text.AwLog.Subtitle" android:layout_marginBottom="12dp" />
+            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal">
+                <com.google.android.material.button.MaterialButton android:id="@+id/btnVerbose" style="@style/MaterialButton.AwLog.Outlined" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="Verbose" android:layout_marginEnd="4dp" />
+                <com.google.android.material.button.MaterialButton android:id="@+id/btnDebug" style="@style/MaterialButton.AwLog.Outlined" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="Debug" android:layout_marginHorizontal="4dp" />
+                <com.google.android.material.button.MaterialButton android:id="@+id/btnInfo" style="@style/MaterialButton.AwLog.Outlined" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="Info" android:layout_marginStart="4dp" />
+            </LinearLayout>
+            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:layout_marginTop="8dp" android:layout_marginBottom="16dp">
+                <com.google.android.material.button.MaterialButton android:id="@+id/btnWarn" style="@style/MaterialButton.AwLog.Outlined" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="Warn" android:layout_marginEnd="4dp" />
+                <com.google.android.material.button.MaterialButton android:id="@+id/btnError" style="@style/MaterialButton.AwLog.Outlined" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="Error" android:layout_marginHorizontal="4dp" />
+                <com.google.android.material.button.MaterialButton android:id="@+id/btnWtf" style="@style/MaterialButton.AwLog.Outlined" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="WTF" android:layout_marginStart="4dp" />
+            </LinearLayout>
+            <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:text="高级功能" style="@style/Text.AwLog.Subtitle" android:layout_marginBottom="12dp" />
+            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal">
+                <com.google.android.material.button.MaterialButton android:id="@+id/btnLambda" style="@style/MaterialButton.AwLog.Outlined" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="Lambda 日志" android:layout_marginEnd="4dp" />
+                <com.google.android.material.button.MaterialButton android:id="@+id/btnTagged" style="@style/MaterialButton.AwLog.Outlined" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="带标签日志" android:layout_marginStart="4dp" />
+            </LinearLayout>
+            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:layout_marginTop="8dp">
+                <com.google.android.material.button.MaterialButton android:id="@+id/btnFormat" style="@style/MaterialButton.AwLog.Outlined" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="格式化日志" android:layout_marginEnd="4dp" />
+                <com.google.android.material.button.MaterialButton android:id="@+id/btnThrowableLambda" style="@style/MaterialButton.AwLog.Outlined" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="异常+Lambda" android:layout_marginStart="4dp" />
+            </LinearLayout>
+            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:layout_marginTop="8dp" android:layout_marginBottom="16dp">
+                <com.google.android.material.button.MaterialButton android:id="@+id/btnConcurrent" style="@style/MaterialButton.AwLog.Outlined" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="并发日志" android:layout_marginEnd="4dp" />
+                <com.google.android.material.button.MaterialButton android:id="@+id/btnDynamicLevel" style="@style/MaterialButton.AwLog.Outlined" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="动态级别" android:layout_marginStart="4dp" />
+            </LinearLayout>
+            <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:text="JSON / XML 日志" style="@style/Text.AwLog.Subtitle" android:layout_marginBottom="12dp" />
+            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:layout_marginBottom="16dp">
+                <com.google.android.material.button.MaterialButton android:id="@+id/btnJsonDebug" style="@style/MaterialButton.AwLog.Outlined" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="JSON Debug" android:layout_marginEnd="4dp" />
+                <com.google.android.material.button.MaterialButton android:id="@+id/btnJsonError" style="@style/MaterialButton.AwLog.Outlined" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="JSON Error" android:layout_marginHorizontal="4dp" />
+                <com.google.android.material.button.MaterialButton android:id="@+id/btnXml" style="@style/MaterialButton.AwLog.Outlined" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="XML" android:layout_marginStart="4dp" />
+            </LinearLayout>
+            <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:text="拦截器" style="@style/Text.AwLog.Subtitle" android:layout_marginBottom="12dp" />
+            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:layout_marginBottom="16dp">
+                <com.google.android.material.button.MaterialButton android:id="@+id/btnDesensitize" style="@style/MaterialButton.AwLog.Outlined" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="脱敏测试" android:layout_marginEnd="4dp" />
+                <com.google.android.material.button.MaterialButton android:id="@+id/btnLevelFilter" style="@style/MaterialButton.AwLog.Outlined" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="级别过滤" android:layout_marginStart="4dp" />
+            </LinearLayout>
+            <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:text="文件管理" style="@style/Text.AwLog.Subtitle" android:layout_marginBottom="12dp" />
+            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal">
+                <com.google.android.material.button.MaterialButton android:id="@+id/btnFileInfo" style="@style/MaterialButton.AwLog.Outlined" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="文件信息" android:layout_marginEnd="4dp" />
+                <com.google.android.material.button.MaterialButton android:id="@+id/btnCompress" style="@style/MaterialButton.AwLog.Outlined" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="压缩旧日志" android:layout_marginStart="4dp" />
+            </LinearLayout>
+            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:layout_marginTop="8dp">
+                <com.google.android.material.button.MaterialButton android:id="@+id/btnDiskSpace" style="@style/MaterialButton.AwLog.Outlined" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="磁盘空间" android:layout_marginEnd="4dp" />
+                <com.google.android.material.button.MaterialButton android:id="@+id/btnSearch" style="@style/MaterialButton.AwLog.Outlined" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="搜索日志" android:layout_marginStart="4dp" />
+            </LinearLayout>
+            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:layout_marginTop="8dp">
+                <com.google.android.material.button.MaterialButton android:id="@+id/btnExport" style="@style/MaterialButton.AwLog.Outlined" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="导出 ZIP" android:layout_marginEnd="4dp" />
+                <com.google.android.material.button.MaterialButton android:id="@+id/btnFlush" style="@style/MaterialButton.AwLog.Outlined" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="刷新到磁盘" android:layout_marginStart="4dp" />
+            </LinearLayout>
+            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:layout_marginTop="8dp" android:layout_marginBottom="16dp">
+                <com.google.android.material.button.MaterialButton android:id="@+id/btnClearLogs" style="@style/MaterialButton.AwLog.Outlined" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="清除日志文件" android:layout_marginEnd="4dp" />
+                <com.google.android.material.button.MaterialButton android:id="@+id/btnCustomFormatter" style="@style/MaterialButton.AwLog.Outlined" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="自定义格式化" android:layout_marginStart="4dp" />
+            </LinearLayout>
         </LinearLayout>
-        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:layout_marginTop="8dp" android:layout_marginBottom="16dp">
-            <com.google.android.material.button.MaterialButton android:id="@+id/btnWarn" style="@style/MaterialButton.AwLog.Outlined" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="Warn" android:layout_marginEnd="4dp" />
-            <com.google.android.material.button.MaterialButton android:id="@+id/btnError" style="@style/MaterialButton.AwLog.Outlined" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="Error" android:layout_marginHorizontal="4dp" />
-            <com.google.android.material.button.MaterialButton android:id="@+id/btnWtf" style="@style/MaterialButton.AwLog.Outlined" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="WTF" android:layout_marginStart="4dp" />
-        </LinearLayout>
-        <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:text="高级功能" style="@style/Text.AwLog.Subtitle" android:layout_marginBottom="12dp" />
-        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal">
-            <com.google.android.material.button.MaterialButton android:id="@+id/btnLambda" style="@style/MaterialButton.AwLog.Outlined" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="Lambda 日志" android:layout_marginEnd="4dp" />
-            <com.google.android.material.button.MaterialButton android:id="@+id/btnTagged" style="@style/MaterialButton.AwLog.Outlined" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="带标签日志" android:layout_marginStart="4dp" />
-        </LinearLayout>
-        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:layout_marginTop="8dp">
-            <com.google.android.material.button.MaterialButton android:id="@+id/btnFormat" style="@style/MaterialButton.AwLog.Outlined" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="格式化日志" android:layout_marginEnd="4dp" />
-            <com.google.android.material.button.MaterialButton android:id="@+id/btnThrowableLambda" style="@style/MaterialButton.AwLog.Outlined" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="异常+Lambda" android:layout_marginStart="4dp" />
-        </LinearLayout>
-        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:layout_marginTop="8dp" android:layout_marginBottom="16dp">
-            <com.google.android.material.button.MaterialButton android:id="@+id/btnConcurrent" style="@style/MaterialButton.AwLog.Outlined" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="并发日志" android:layout_marginEnd="4dp" />
-            <com.google.android.material.button.MaterialButton android:id="@+id/btnDynamicLevel" style="@style/MaterialButton.AwLog.Outlined" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="动态级别" android:layout_marginStart="4dp" />
-        </LinearLayout>
-        <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:text="JSON 日志" style="@style/Text.AwLog.Subtitle" android:layout_marginBottom="12dp" />
-        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:layout_marginBottom="16dp">
-            <com.google.android.material.button.MaterialButton android:id="@+id/btnJsonDebug" style="@style/MaterialButton.AwLog.Outlined" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="JSON Debug" android:layout_marginEnd="4dp" />
-            <com.google.android.material.button.MaterialButton android:id="@+id/btnJsonError" style="@style/MaterialButton.AwLog.Outlined" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="JSON Error" android:layout_marginStart="4dp" />
-        </LinearLayout>
-        <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:text="拦截器" style="@style/Text.AwLog.Subtitle" android:layout_marginBottom="12dp" />
-        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:layout_marginBottom="16dp">
-            <com.google.android.material.button.MaterialButton android:id="@+id/btnDesensitize" style="@style/MaterialButton.AwLog.Outlined" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="脱敏测试" android:layout_marginEnd="4dp" />
-            <com.google.android.material.button.MaterialButton android:id="@+id/btnLevelFilter" style="@style/MaterialButton.AwLog.Outlined" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="级别过滤" android:layout_marginStart="4dp" />
-        </LinearLayout>
-        <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:text="文件管理" style="@style/Text.AwLog.Subtitle" android:layout_marginBottom="12dp" />
-        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal">
-            <com.google.android.material.button.MaterialButton android:id="@+id/btnFileInfo" style="@style/MaterialButton.AwLog.Outlined" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="文件信息" android:layout_marginEnd="4dp" />
-            <com.google.android.material.button.MaterialButton android:id="@+id/btnCompress" style="@style/MaterialButton.AwLog.Outlined" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="压缩旧日志" android:layout_marginStart="4dp" />
-        </LinearLayout>
-        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:layout_marginTop="8dp">
-            <com.google.android.material.button.MaterialButton android:id="@+id/btnDiskSpace" style="@style/MaterialButton.AwLog.Outlined" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="磁盘空间" android:layout_marginEnd="4dp" />
-            <com.google.android.material.button.MaterialButton android:id="@+id/btnSearch" style="@style/MaterialButton.AwLog.Outlined" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="搜索日志" android:layout_marginStart="4dp" />
-        </LinearLayout>
-        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:layout_marginTop="8dp" android:layout_marginBottom="16dp">
-            <com.google.android.material.button.MaterialButton android:id="@+id/btnFlush" style="@style/MaterialButton.AwLog.Outlined" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="刷新到磁盘" android:layout_marginEnd="4dp" />
-            <com.google.android.material.button.MaterialButton android:id="@+id/btnClearLogs" style="@style/MaterialButton.AwLog.Outlined" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="清除日志文件" android:layout_marginStart="4dp" />
-        </LinearLayout>
-    </LinearLayout>
-</ScrollView>
+    </androidx.core.widget.NestedScrollView>
+</androidx.coordinatorlayout.widget.CoordinatorLayout>

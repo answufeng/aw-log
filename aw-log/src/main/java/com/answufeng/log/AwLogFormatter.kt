@@ -62,12 +62,12 @@ private class CustomLogFormatter(
     private val showThread: Boolean
 ) : AwLogFormatter {
 
-    private val dateFormat = SimpleDateFormat(timePattern, Locale.US)
+    private val dateFormat = ThreadLocal.withInitial { SimpleDateFormat(timePattern, Locale.US) }
 
     override fun format(priority: Int, tag: String?, message: String, throwable: Throwable?): String {
         val sb = StringBuilder(256)
         if (showTime) {
-            sb.append(dateFormat.format(Date()))
+            sb.append(dateFormat.get()!!.format(Date()))
             sb.append(separator)
         }
         if (showThread) {
@@ -89,10 +89,10 @@ private class CustomLogFormatter(
 
 private object DefaultLogFormatter : AwLogFormatter {
 
-    private val dateFormat = SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS", Locale.US)
+    private val dateFormat = ThreadLocal.withInitial { SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS", Locale.US) }
 
     override fun format(priority: Int, tag: String?, message: String, throwable: Throwable?): String {
-        val time = dateFormat.format(Date())
+        val time = dateFormat.get()!!.format(Date())
         val level = priorityToString(priority)
         val logTag = tag ?: "NoTag"
         return "$time $level/$logTag: $message"
@@ -101,10 +101,10 @@ private object DefaultLogFormatter : AwLogFormatter {
 
 private object CompactLogFormatter : AwLogFormatter {
 
-    private val dateFormat = SimpleDateFormat("HH:mm:ss.SSS", Locale.US)
+    private val dateFormat = ThreadLocal.withInitial { SimpleDateFormat("HH:mm:ss.SSS", Locale.US) }
 
     override fun format(priority: Int, tag: String?, message: String, throwable: Throwable?): String {
-        val time = dateFormat.format(Date())
+        val time = dateFormat.get()!!.format(Date())
         val level = priorityToString(priority)
         val logTag = tag ?: "NoTag"
         return "$time $level/$logTag: $message"

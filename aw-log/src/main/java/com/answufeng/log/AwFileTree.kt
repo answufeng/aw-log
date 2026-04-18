@@ -6,12 +6,12 @@ import java.io.BufferedWriter
 import java.io.File
 import java.io.FileWriter
 import java.io.PrintWriter
+import java.io.StringWriter
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 import java.util.concurrent.CountDownLatch
-import java.util.concurrent.Executors
-import java.util.concurrent.ScheduledExecutorService
+import java.util.concurrent.ScheduledThreadPoolExecutor
 import java.util.concurrent.TimeUnit
 
 internal class AwFileTree(
@@ -23,14 +23,13 @@ internal class AwFileTree(
     private val flushIntervalMs: Long = 3000L
 ) : Timber.Tree() {
 
-    private val writeExecutor = Executors.newSingleThreadExecutor { runnable ->
+    private val executor: ScheduledThreadPoolExecutor = ScheduledThreadPoolExecutor(
+        1
+    ) { runnable ->
         Thread(runnable, "AwLog-FileWriter").apply { isDaemon = true }
+    }.apply {
+        removeOnCancelPolicy = true
     }
-
-    private val scheduledExecutor: ScheduledExecutorService =
-        Executors.newSingleThreadScheduledExecutor { runnable ->
-            Thread(runnable, "AwLog-FlushScheduler").apply { isDaemon = true }
-        }
 
     private val dateFormatter = SimpleDateFormat("yyyy-MM-dd", Locale.US)
 
@@ -48,12 +47,16 @@ internal class AwFileTree(
     @Volatile
     private var shutdown: Boolean = false
 
+    @Volatile
+    private var droppedCount: Long = 0
+
     init {
-        scheduledExecutor.scheduleAtFixedRate({
+        executor.scheduleAtFixedRate({
             if (!shutdown) {
-                writeExecutor.execute {
+                try {
                     flushInternal()
                     cleanOldFilesIfNeeded()
+                } catch (_: Exception) {
                 }
             }
         }, flushIntervalMs, flushIntervalMs, TimeUnit.MILLISECONDS)
@@ -65,7 +68,15 @@ internal class AwFileTree(
 
     override fun log(priority: Int, tag: String?, message: String, t: Throwable?) {
         if (shutdown) return
-        writeExecutor.execute {
+        val queueSize = executor.queue.size
+        if (queueSize >= MAX_QUEUE_SIZE) {
+            droppedCount++
+            if (droppedCount % 100L == 1L) {
+                Log.w(TAG, "Log queue full ($queueSize), dropped $droppedCount messages total")
+            }
+            return
+        }
+        executor.execute {
             try {
                 writeLog(priority, tag, message, t)
             } catch (_: Exception) {
@@ -76,7 +87,7 @@ internal class AwFileTree(
     fun flush() {
         if (shutdown) return
         val latch = CountDownLatch(1)
-        writeExecutor.execute {
+        executor.execute {
             try {
                 flushInternal()
             } finally {
@@ -93,14 +104,13 @@ internal class AwFileTree(
     fun shutdown() {
         if (shutdown) return
         shutdown = true
-        scheduledExecutor.shutdown()
-        writeExecutor.execute {
+        executor.execute {
             flushInternal()
             closeCurrentWriter()
         }
-        writeExecutor.shutdown()
+        executor.shutdown()
         try {
-            writeExecutor.awaitTermination(5, TimeUnit.SECONDS)
+            executor.awaitTermination(5, TimeUnit.SECONDS)
         } catch (_: InterruptedException) {
             Thread.currentThread().interrupt()
         }
@@ -143,9 +153,13 @@ internal class AwFileTree(
         currentFileSize += formattedLine.length.toLong() + 1
 
         if (t != null) {
-            val pw = PrintWriter(writer)
+            val sw = StringWriter()
+            val pw = PrintWriter(sw)
             t.printStackTrace(pw)
             pw.flush()
+            val stackTrace = sw.toString()
+            writer.write(stackTrace)
+            currentFileSize += stackTrace.length.toLong()
         }
 
         if (priority >= Log.ERROR) {
