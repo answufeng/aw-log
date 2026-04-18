@@ -75,9 +75,9 @@ class AwDesensitizeInterceptor private constructor(
         @JvmField
         val EMAIL = DesensitizeRule("email", Regex("""\b[\w.\-]+@[\w.\-]+\.\w+\b"""), Strategy.FULL)
 
-        /** key=value 规则（password/token/secret/key/auth），默认使用 [Strategy.FULL] 全掩码。 */
+        /** key=value 规则（password/token/secret/api_key/access_key/auth），默认使用 [Strategy.FULL] 全掩码。 */
         @JvmField
-        val KEY_VALUE = DesensitizeRule("keyValue", Regex("""(?i)(password|token|secret|key|auth)\s*[=:]\s*\S+"""), Strategy.FULL)
+        val KEY_VALUE = DesensitizeRule("keyValue", Regex("""(?i)(password|token|secret|api_?key|access_?key|auth)\s*[=:]\s*\S+"""), Strategy.FULL)
 
         /**
          * 使用 DSL 创建脱敏拦截器。

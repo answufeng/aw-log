@@ -7,14 +7,14 @@ internal class AwCrashTree(
     private val crashHandler: ((String?, Throwable?, String?) -> Unit)? = null
 ) : Timber.Tree() {
 
-    private val defaultHandler: Thread.UncaughtExceptionHandler? =
-        Thread.getDefaultUncaughtExceptionHandler()
+    private var defaultHandler: Thread.UncaughtExceptionHandler? = null
 
     private var hasInstalledHandler = false
 
     fun installCrashHandler() {
         if (hasInstalledHandler) return
         hasInstalledHandler = true
+        defaultHandler = Thread.getDefaultUncaughtExceptionHandler()
         Thread.setDefaultUncaughtExceptionHandler { thread, throwable ->
             try {
                 val tag = "AwCrash"
@@ -32,13 +32,10 @@ internal class AwCrashTree(
     }
 
     override fun log(priority: Int, tag: String?, message: String, t: Throwable?) {
-        crashHandler?.invoke(tag, t, message)
-            ?: run {
-                if (t != null) {
-                    Log.e(tag ?: "AwCrash", message, t)
-                } else {
-                    Log.e(tag ?: "AwCrash", message)
-                }
-            }
+        if (t != null) {
+            Log.e(tag ?: "AwCrash", message, t)
+        } else {
+            Log.e(tag ?: "AwCrash", message)
+        }
     }
 }
