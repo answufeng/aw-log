@@ -3,7 +3,7 @@
     <application
         android:allowBackup="false"
         android:label="📋 日志库演示"
-        android:theme="@style/Theme.MaterialComponents.Light.DarkActionBar">
+        android:theme="@style/Theme.AwLogdemo">
         <activity
             android:name=".MainActivity"
             android:exported="true">

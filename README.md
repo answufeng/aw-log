@@ -4,21 +4,23 @@
 
 基于 [Timber](https://github.com/JakeWharton/timber) 的 Android 结构化日志工具库。
 
-提供 Logcat 调试输出、文件日志持久化、崩溃收集、日志拦截与脱敏、自定义格式化、日志文件管理（压缩/导出/清理）等能力。
+提供 Logcat 调试输出、文件日志持久化、崩溃收集、日志拦截与脱敏、自定义格式化、日志文件管理（压缩/导出/清理/搜索）等能力。
 
 ## 特性
 
 - **AwDebugTree** — Logcat 输出，自动 Tag 包含方法名与调用位置（一次栈遍历，零冗余）
 - **AwFileTree** — 文件日志，按日期分文件、大小限制轮转、异步写入、智能刷新（定时 + ERROR 即时）、磁盘空间检查
-- **AwCrashTree** — Error/Assert 级别捕获，支持自定义回调（可对接 Firebase Crashlytics、Bugly 等）
+- **AwCrashTree** — 崩溃收集（UncaughtExceptionHandler + ERROR 级别捕获），支持自定义回调（可对接 Firebase Crashlytics、Bugly 等）
 - **AwLogInterceptor** — 责任链模式拦截器，支持过滤、脱敏、消息增强、Tag 修改，异常自动隔离
-- **AwDesensitizeInterceptor** — 内置脱敏拦截器，预置手机号/身份证/银行卡/邮箱/key=value 规则
-- **AwLogFormatter** — 自定义日志格式化，可定制时间格式、分隔符、显示字段
-- **AwLogFileManager** — 压缩旧日志、导出为 ZIP、查询大小、批量清理，支持异步操作
+- **AwDesensitizeInterceptor** — 内置脱敏拦截器，预置手机号/身份证/银行卡/邮箱/key=value 规则（带词边界匹配）
+- **AwLogFormatter** — 自定义日志格式化，可定制时间格式、分隔符、显示字段、线程信息
+- **AwLogFileManager** — 压缩旧日志、导出为 ZIP、查询大小、批量清理、按日期清理、关键词搜索，支持异步操作
+- **AwLogListener** — 日志监听器，实时获取日志输出（UI 展示、远程上报）
 - **JSON 格式化** — 自动识别 JSONObject/JSONArray 并美化输出，支持指定日志级别
 - **Lambda 延迟求值** — 关闭日志时零开销，支持 Lambda + Tag 组合
 - **DSL 配置** — 简洁优雅的初始化方式
-- **minSdk 21+** — 覆盖 99%+ 的 Android 设备
+- **动态级别调整** — 运行时修改日志级别，无需重新初始化
+- **minSdk 24+** — 覆盖 99%+ 的 Android 设备
 
 ## 引入
 
@@ -65,6 +67,11 @@ class MyApp : Application() {
                 email()
                 keyValue()
             })
+
+            // 日志监听器
+            addListener { priority, tag, message, throwable ->
+                // 实时获取日志（UI 展示、远程上报等）
+            }
         }
     }
 }
@@ -73,10 +80,10 @@ class MyApp : Application() {
 ### 2. 使用
 
 ```kotlin
-// 基本日志
+// 基本日志（支持 String.format 格式化）
 AwLogger.d("请求成功")
 AwLogger.e(exception, "请求失败")
-AwLogger.i("用户登录: userId=%s", userId)
+AwLogger.i("用户登录: userId=%d", userId)
 
 // Lambda 延迟求值（日志关闭时不会执行 Lambda）
 AwLogger.d { "响应: ${response.body}" }
@@ -85,8 +92,8 @@ AwLogger.d { "响应: ${response.body}" }
 AwLogger.d("Network") { "连接超时: ${url}" }
 AwLogger.e("API") { "请求失败: ${error.message}" }
 
-// 带 Tag 的日志（Timber 风格）
-AwLogger.tag("Network").d("连接超时")
+// Throwable + Tag + Lambda 组合
+AwLogger.e(exception, "API") { "请求失败: ${error.message}" }
 
 // JSON 格式化（默认 DEBUG 级别）
 AwLogger.json(jsonString, "API")
@@ -96,12 +103,18 @@ AwLogger.json(jsonString, "API", priority = Log.ERROR)
 
 // WTF 级别
 AwLogger.wtf("不应该到达的分支")
+
+// 动态修改日志级别
+AwLogger.setMinPriority(Log.WARN)
+
+// 获取文件日志目录
+val logDir = AwLogger.getFileDir()
 ```
 
 ### 3. 文件管理
 
 ```kotlin
-val logDir = "${cacheDir.absolutePath}/logs"
+val logDir = AwLogger.getFileDir()
 
 // 压缩旧日志（非当天的 .txt 文件压缩为 .gz）
 val count = AwLogFileManager.compressOldLogs(logDir)
@@ -131,9 +144,21 @@ val available = AwLogFileManager.getAvailableSpace(logDir)
 // 清理所有日志
 val deleted = AwLogFileManager.clearAll(logDir)
 
+// 按日期清理（清理指定日期之前的日志）
+val calendar = Calendar.getInstance().apply { add(Calendar.DAY_OF_MONTH, -7) }
+AwLogFileManager.clearBefore(logDir, calendar.time)
+
 // 异步清理
 AwLogFileManager.clearAllAsync(logDir) { count ->
     // 清理完成
+}
+
+// 搜索日志（按关键词）
+val results = AwLogFileManager.search(logDir, "NullPointerException")
+
+// 异步搜索
+AwLogFileManager.searchAsync(logDir, "error") { results ->
+    // results 为匹配的日志行列表
 }
 ```
 
@@ -207,10 +232,10 @@ AwLogger.init {
 
 ```kotlin
 addInterceptor(AwDesensitizeInterceptor.create {
-    phone()       // 中国手机号：138****1234
-    idCard()      // 身份证号：110***********1234
-    bankCard()    // 银行卡号：622***********1234
-    email()       // 邮箱：******
+    phone()       // 中国手机号：138****5678（带词边界匹配）
+    idCard()      // 身份证号：110***********1234（带词边界匹配）
+    bankCard()    // 银行卡号：622***********1234（常见卡 BIN 开头，带词边界匹配）
+    email()       // 邮箱：******（带词边界匹配）
     keyValue()    // password=xxx, token=xxx 等：******
 
     // 自定义规则
@@ -229,6 +254,21 @@ addInterceptor(AwDesensitizeInterceptor.create {
 | `FULL` | 全部掩码 | `user@mail.com` → `******` |
 | `HASH` | 取 hashCode | `secret` → `6c25a14` |
 
+## 日志监听器
+
+```kotlin
+AwLogger.init {
+    debug = true
+
+    // 添加日志监听器，实时获取日志输出
+    addListener(object : AwLogListener {
+        override fun onLog(priority: Int, tag: String?, message: String, throwable: Throwable?) {
+            // UI 展示、远程上报等
+        }
+    })
+}
+```
+
 ## 自定义格式化器
 
 ```kotlin
@@ -242,8 +282,13 @@ AwLogger.init {
         showLevel = true
         showTag = true
         showTime = true
+        showThread = true  // 显示线程信息
     }
 }
+
+// 使用预设格式化器
+fileFormatter = AwLogFormatter.compact()  // 简洁模式：HH:mm:ss.SSS D/Tag: message
+fileFormatter = AwLogFormatter.verbose()  // 详细模式：yyyy-MM-dd HH:mm:ss.SSS D/Tag: message
 
 // 完全自定义格式化器
 fileFormatter = object : AwLogFormatter {
@@ -272,29 +317,56 @@ AwLogger.init {
 AwLogger (入口)
     ├── AwDebugTree            → Logcat 输出（单次栈遍历）
     ├── AwFileTree             → 文件日志（异步写入、智能刷新、磁盘检查、轮转清理）
-    ├── AwCrashTree            → 崩溃收集（回调 + 默认 Log.e 输出）
+    ├── AwCrashTree            → 崩溃收集（UncaughtExceptionHandler + ERROR 级别回调）
     └── Custom Trees           → 用户自定义 Tree
 
 AwLogInterceptor (Chain)       → 责任链拦截器（过滤/脱敏/增强/Tag修改）
   └── AwDesensitizeInterceptor → 内置脱敏拦截器（手机号/身份证/银行卡/邮箱/key=value）
-AwLogFormatter                 → 日志格式化
-AwLogFileManager               → 文件管理（压缩/导出/清理/异步操作/磁盘查询）
+AwLogFormatter                 → 日志格式化（compact/verbose/自定义）
+AwLogFileManager               → 文件管理（压缩/导出/清理/搜索/异步操作/磁盘查询）
+AwLogListener                  → 日志监听器（实时回调）
 ```
 
 ## 性能优化
 
 - **拦截器单次执行**：拦截仅在 AwLogger 层执行一次，Tree 不再重复拦截
-- **智能文件刷新**：定时刷新（默认 3 秒）+ ERROR 级别即时 flush，吞吐量提升 5-10 倍
+- **智能文件刷新**：ScheduledExecutorService 定时刷新（默认 3 秒）+ ERROR 级别即时 flush
 - **Lambda 零开销**：日志关闭时 Lambda 完全不执行
 - **零临时对象**：Formatter 使用 SimpleDateFormat + System.currentTimeMillis()，避免 LocalDateTime 分配
 - **单次栈遍历**：AwDebugTree 将方法位置信息编码到 Tag 中，消除双重栈遍历
 - **异常隔离**：拦截器链中任一拦截器异常不会中断链路
+- **内存文件大小追踪**：避免每次写入时调用 file.length() IO 操作
+- **周期性文件清理**：每 100 次写入检查一次文件数量，避免高频日志场景下的性能开销
+- **共享线程池**：AwLogFileManager 异步操作使用共享线程池，避免频繁创建线程
 
 ## 兼容性
 
-- minSdk 21+
+- minSdk 24+
 - Kotlin 2.0+
 - Timber 5.0.1
+
+## FAQ
+
+**Q: 日志文件存储位置应该选哪里？**
+A: 推荐使用 `context.cacheDir.absolutePath + "/logs"`，这是应用私有目录，不需要存储权限，卸载时自动清理。
+
+**Q: 多进程可以使用文件日志吗？**
+A: 当前版本不支持多进程文件日志写入。多进程场景建议只在主进程启用文件日志，或使用 ContentProvider 协调。
+
+**Q: Release 构建如何配置？**
+A: 建议关闭 debug 输出，仅启用文件日志和崩溃收集：
+```kotlin
+AwLogger.init {
+    debug = false
+    fileLog = true
+    fileDir = "${cacheDir.absolutePath}/logs"
+    fileMinPriority = Log.WARN
+    crashLog = true
+}
+```
+
+**Q: ProGuard/R8 需要额外配置吗？**
+A: 不需要。库已通过 `consumer-rules.pro` 自动配置 ProGuard 规则。
 
 ## 许可证
 

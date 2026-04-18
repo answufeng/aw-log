@@ -53,21 +53,21 @@ class AwDesensitizeInterceptor private constructor(
     }
 
     companion object {
-        /** 中国手机号规则（1[3-9]开头，11位）。 */
+        /** 中国手机号规则（1[3-9]开头，11位），带词边界匹配。 */
         @JvmField
-        val PHONE = DesensitizeRule("phone", Regex("""1[3-9]\d{9}"""))
+        val PHONE = DesensitizeRule("phone", Regex("""\b1[3-9]\d{9}\b"""))
 
-        /** 身份证号规则（18位，含末尾 X）。 */
+        /** 身份证号规则（18位，含末尾 X），带词边界匹配。 */
         @JvmField
-        val ID_CARD = DesensitizeRule("idCard", Regex("""[1-9]\d{5}(19|20)\d{2}(0[1-9]|1[0-2])(0[1-9]|[12]\d|3[01])\d{3}[\dXx]"""))
+        val ID_CARD = DesensitizeRule("idCard", Regex("""\b[1-9]\d{5}(19|20)\d{2}(0[1-9]|1[0-2])(0[1-9]|[12]\d|3[01])\d{3}[\dXx]\b"""))
 
-        /** 银行卡号规则（16-19位数字）。 */
+        /** 银行卡号规则（常见卡 BIN 开头，16-19位），带词边界匹配。 */
         @JvmField
-        val BANK_CARD = DesensitizeRule("bankCard", Regex("""\d{16,19}"""))
+        val BANK_CARD = DesensitizeRule("bankCard", Regex("""\b(62|45|51|35|37|4\d|5[1-5])\d{14,17}\b"""))
 
-        /** 邮箱规则，默认使用 [Strategy.FULL] 全掩码。 */
+        /** 邮箱规则，带词边界匹配，默认使用 [Strategy.FULL] 全掩码。 */
         @JvmField
-        val EMAIL = DesensitizeRule("email", Regex("""[\w.\-]+@[\w.\-]+\.\w+"""), Strategy.FULL)
+        val EMAIL = DesensitizeRule("email", Regex("""\b[\w.\-]+@[\w.\-]+\.\w+\b"""), Strategy.FULL)
 
         /** key=value 规则（password/token/secret/key/auth），默认使用 [Strategy.FULL] 全掩码。 */
         @JvmField

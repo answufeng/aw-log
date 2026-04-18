@@ -68,7 +68,7 @@ class AwDebugTreeTest {
             fileLog = false
             crashLog = false
         }
-        AwLogger.tag("TestTag").d("tagged message")
+        AwLogger.d("TestTag") { "tagged message" }
         AwLogger.reset()
     }
 

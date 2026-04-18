@@ -10,22 +10,10 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 import java.util.concurrent.CountDownLatch
-import java.util.concurrent.LinkedBlockingQueue
-import java.util.concurrent.ThreadPoolExecutor
+import java.util.concurrent.Executors
+import java.util.concurrent.ScheduledExecutorService
 import java.util.concurrent.TimeUnit
 
-/**
- * 文件日志 Tree，支持按日期分文件、大小限制轮转、异步写入和智能刷新。
- *
- * 核心特性：
- * - **异步写入**：单线程 [ThreadPoolExecutor] 保证写入顺序，不阻塞调用线程
- * - **智能刷新**：定时刷新（默认 3 秒）+ ERROR 级别即时 flush，平衡性能与可靠性
- * - **磁盘空间检查**：可用空间低于 10MB 时跳过写入
- * - **按日期分文件**：每天一个日志文件，格式 `log_yyyy-MM-dd.txt`
- * - **大小轮转**：超过 [maxFileSize] 时自动重命名并创建新文件
- * - **数量清理**：超过 [maxFileCount] 时自动删除最旧的文件
- * - **队列溢出策略**：[ThreadPoolExecutor.DiscardOldestPolicy]，保留最新日志
- */
 internal class AwFileTree(
     private val logDir: String,
     private val maxFileSize: Long = 5L * 1024 * 1024,
@@ -35,12 +23,14 @@ internal class AwFileTree(
     private val flushIntervalMs: Long = 3000L
 ) : Timber.Tree() {
 
-    private val executor = ThreadPoolExecutor(
-        1, 1, 0L, TimeUnit.MILLISECONDS,
-        LinkedBlockingQueue(MAX_QUEUE_SIZE),
-        { runnable -> Thread(runnable, "AwLog-FileWriter").apply { isDaemon = true } },
-        ThreadPoolExecutor.DiscardOldestPolicy()
-    )
+    private val writeExecutor = Executors.newSingleThreadExecutor { runnable ->
+        Thread(runnable, "AwLog-FileWriter").apply { isDaemon = true }
+    }
+
+    private val scheduledExecutor: ScheduledExecutorService =
+        Executors.newSingleThreadScheduledExecutor { runnable ->
+            Thread(runnable, "AwLog-FlushScheduler").apply { isDaemon = true }
+        }
 
     private val dateFormatter = SimpleDateFormat("yyyy-MM-dd", Locale.US)
 
@@ -49,20 +39,24 @@ internal class AwFileTree(
     private var currentDate: String? = null
     private var currentFileName: String? = null
 
-    private val flushRunnable = object : Runnable {
-        override fun run() {
-            flushInternal()
-            if (!executor.isShutdown) {
-                executor.execute(this)
-            }
-        }
-    }
+    @Volatile
+    private var currentFileSize: Long = 0
+
+    @Volatile
+    private var writeCount: Long = 0
+
+    @Volatile
+    private var shutdown: Boolean = false
 
     init {
-        executor.execute {
-            Thread.sleep(flushIntervalMs)
-            flushRunnable.run()
-        }
+        scheduledExecutor.scheduleAtFixedRate({
+            if (!shutdown) {
+                writeExecutor.execute {
+                    flushInternal()
+                    cleanOldFilesIfNeeded()
+                }
+            }
+        }, flushIntervalMs, flushIntervalMs, TimeUnit.MILLISECONDS)
     }
 
     override fun isLoggable(tag: String?, priority: Int): Boolean {
@@ -70,7 +64,8 @@ internal class AwFileTree(
     }
 
     override fun log(priority: Int, tag: String?, message: String, t: Throwable?) {
-        executor.execute {
+        if (shutdown) return
+        writeExecutor.execute {
             try {
                 writeLog(priority, tag, message, t)
             } catch (_: Exception) {
@@ -78,14 +73,10 @@ internal class AwFileTree(
         }
     }
 
-    /**
-     * 刷新文件日志缓冲区，确保日志写入磁盘。
-     *
-     * 最多等待 5 秒，超时后返回。建议在 Activity.onDestroy 或 Application.onTerminate 中调用。
-     */
     fun flush() {
+        if (shutdown) return
         val latch = CountDownLatch(1)
-        executor.execute {
+        writeExecutor.execute {
             try {
                 flushInternal()
             } finally {
@@ -94,6 +85,22 @@ internal class AwFileTree(
         }
         try {
             latch.await(5, TimeUnit.SECONDS)
+        } catch (_: InterruptedException) {
+            Thread.currentThread().interrupt()
+        }
+    }
+
+    fun shutdown() {
+        if (shutdown) return
+        shutdown = true
+        scheduledExecutor.shutdown()
+        writeExecutor.execute {
+            flushInternal()
+            closeCurrentWriter()
+        }
+        writeExecutor.shutdown()
+        try {
+            writeExecutor.awaitTermination(5, TimeUnit.SECONDS)
         } catch (_: InterruptedException) {
             Thread.currentThread().interrupt()
         }
@@ -110,7 +117,6 @@ internal class AwFileTree(
         }
     }
 
-    @Synchronized
     private fun writeLog(priority: Int, tag: String?, message: String, t: Throwable?) {
         val dir = File(logDir)
         if (!dir.exists() && !dir.mkdirs()) {
@@ -128,12 +134,13 @@ internal class AwFileTree(
 
         rotateIfNeeded(dir, fileName)
 
-        val file = File(dir, fileName)
         val writer = getWriter(dir, fileName, today)
 
         val formattedLine = formatter.format(priority, tag, message, t)
         writer.write(formattedLine)
         writer.newLine()
+
+        currentFileSize += formattedLine.length.toLong() + 1
 
         if (t != null) {
             val pw = PrintWriter(writer)
@@ -144,25 +151,34 @@ internal class AwFileTree(
         if (priority >= Log.ERROR) {
             writer.flush()
         }
+
+        writeCount++
     }
 
-    @Synchronized
     private fun getWriter(dir: File, fileName: String, date: String): BufferedWriter {
-        if (currentWriter != null && fileName == currentFileName) {
+        synchronized(this) {
+            if (currentWriter != null && fileName == currentFileName) {
+                return currentWriter!!
+            }
+
+            closeCurrentWriterInternal()
+
+            val file = File(dir, fileName)
+            currentFileSize = if (file.exists()) file.length() else 0L
+            currentWriter = BufferedWriter(FileWriter(file, true), BUFFER_SIZE)
+            currentDate = date
+            currentFileName = fileName
             return currentWriter!!
         }
-
-        closeCurrentWriter()
-
-        val file = File(dir, fileName)
-        currentWriter = BufferedWriter(FileWriter(file, true), BUFFER_SIZE)
-        currentDate = date
-        currentFileName = fileName
-        return currentWriter!!
     }
 
-    @Synchronized
     private fun closeCurrentWriter() {
+        synchronized(this) {
+            closeCurrentWriterInternal()
+        }
+    }
+
+    private fun closeCurrentWriterInternal() {
         currentWriter?.let {
             try {
                 it.flush()
@@ -173,14 +189,27 @@ internal class AwFileTree(
         currentWriter = null
         currentDate = null
         currentFileName = null
+        currentFileSize = 0L
     }
 
     private fun rotateIfNeeded(dir: File, fileName: String) {
-        val file = File(dir, fileName)
-        if (file.exists() && file.length() >= maxFileSize) {
+        if (currentFileSize >= maxFileSize && currentFileName == fileName) {
             closeCurrentWriter()
+            val file = File(dir, fileName)
             rotateFile(file)
+        } else {
+            val file = File(dir, fileName)
+            if (file.exists() && file.length() >= maxFileSize) {
+                closeCurrentWriter()
+                rotateFile(file)
+            }
         }
+    }
+
+    private fun cleanOldFilesIfNeeded() {
+        if (writeCount % CLEAN_CHECK_INTERVAL != 0L) return
+        val dir = File(logDir)
+        if (!dir.exists()) return
         cleanOldFiles(dir)
     }
 
@@ -213,5 +242,6 @@ internal class AwFileTree(
         private const val BUFFER_SIZE = 8192
         private const val MAX_QUEUE_SIZE = 1024
         private const val MIN_DISK_SPACE_BYTES = 10L * 1024 * 1024
+        private const val CLEAN_CHECK_INTERVAL = 100L
     }
 }

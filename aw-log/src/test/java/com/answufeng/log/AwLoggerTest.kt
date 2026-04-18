@@ -216,14 +216,68 @@ class AwLoggerTest {
     }
 
     @Test
-    fun `tag returns Timber Tree`() {
+    fun `formatMessage with args works`() {
         AwLogger.init {
             debug = true
             fileLog = false
             crashLog = false
         }
-        val tree = AwLogger.tag("TestTag")
-        assertNotNull(tree)
+        AwLogger.i("用户登录: userId=%d, name=%s", 123, "张三")
+        AwLogger.d("请求耗时: %dms", 256)
+    }
+
+    @Test
+    fun `throwable with tag lambda works`() {
+        AwLogger.init {
+            debug = true
+            fileLog = false
+            crashLog = false
+        }
+        val ex = RuntimeException("网络超时")
+        AwLogger.e(ex, "API") { "请求失败: ${ex.message}" }
+    }
+
+    @Test
+    fun `setMinPriority works`() {
+        AwLogger.init {
+            debug = true
+            fileLog = false
+            crashLog = false
+            minPriority = Log.VERBOSE
+        }
+        AwLogger.setMinPriority(Log.ERROR)
+        AwLogger.d("should be filtered")
+        AwLogger.e("should pass")
+    }
+
+    @Test
+    fun `getFileDir returns empty when fileLog disabled`() {
+        AwLogger.init {
+            debug = true
+            fileLog = false
+            crashLog = false
+        }
+        assertEquals("", AwLogger.getFileDir())
+    }
+
+    @Test
+    fun `log listener receives logs`() {
+        var receivedPriority = -1
+        var receivedMessage = ""
+        AwLogger.init {
+            debug = true
+            fileLog = false
+            crashLog = false
+            addListener(object : AwLogListener {
+                override fun onLog(priority: Int, tag: String?, message: String, throwable: Throwable?) {
+                    receivedPriority = priority
+                    receivedMessage = message
+                }
+            })
+        }
+        AwLogger.d("test listener")
+        assertEquals(Log.DEBUG, receivedPriority)
+        assertEquals("test listener", receivedMessage)
     }
 
     @Test

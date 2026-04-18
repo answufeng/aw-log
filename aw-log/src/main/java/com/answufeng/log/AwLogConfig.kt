@@ -88,14 +88,17 @@ class AwLogConfig {
 
     internal val extraTrees = mutableListOf<Timber.Tree>()
     internal val interceptors = mutableListOf<AwLogInterceptor>()
+    internal val listeners = mutableListOf<AwLogListener>()
 
-    /** 添加自定义 Timber.Tree。 */
     fun addTree(tree: Timber.Tree) {
         extraTrees.add(tree)
     }
 
-    /** 添加日志拦截器，拦截器按添加顺序组成责任链。 */
     fun addInterceptor(interceptor: AwLogInterceptor) {
         interceptors.add(interceptor)
+    }
+
+    fun addListener(listener: AwLogListener) {
+        listeners.add(listener)
     }
 }
