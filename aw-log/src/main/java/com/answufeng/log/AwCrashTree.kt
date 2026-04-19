@@ -28,7 +28,7 @@ internal class AwCrashTree(
     }
 
     override fun isLoggable(tag: String?, priority: Int): Boolean {
-        return priority >= Log.ERROR
+        return priority == Log.ASSERT
     }
 
     override fun log(priority: Int, tag: String?, message: String, t: Throwable?) {
