@@ -208,7 +208,12 @@ object AwLogger {
     }
 
     private fun formatMessage(message: String, args: Array<out Any?>): String {
-        return if (args.isEmpty()) message else String.format(message, *args)
+        return if (args.isEmpty()) message
+        else try {
+            String.format(message, *args)
+        } catch (e: Exception) {
+            "$message [format error: ${e.message}]"
+        }
     }
 
     fun v(message: String, vararg args: Any?) {

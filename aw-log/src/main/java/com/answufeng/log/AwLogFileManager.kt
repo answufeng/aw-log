@@ -27,6 +27,17 @@ object AwLogFileManager {
             Thread(runnable, "AwLog-FileManager").apply { isDaemon = true }
         }
 
+    /**
+     * 关闭文件管理器的后台线程池。
+     *
+     * 通常不需要手动调用，守护线程会在 JVM 退出时自动销毁。
+     * 仅在需要优雅关闭的场景（如测试）中使用。
+     */
+    @JvmStatic
+    fun shutdown() {
+        executor.shutdown()
+    }
+
     @WorkerThread
     @JvmStatic
     fun compressOldLogs(logDir: String): Int {

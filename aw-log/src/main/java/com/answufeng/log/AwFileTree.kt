@@ -150,7 +150,7 @@ internal class AwFileTree(
         writer.write(formattedLine)
         writer.newLine()
 
-        currentFileSize += formattedLine.length.toLong() + 1
+        currentFileSize += formattedLine.toByteArray(Charsets.UTF_8).size.toLong() + 1
 
         if (t != null) {
             val sw = StringWriter()

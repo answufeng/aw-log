@@ -1,20 +1,20 @@
 # aw-log consumer ProGuard rules
 
--keep class com.answufeng.log.AwLogger { *; }
--keep class com.answufeng.log.AwLogConfig { *; }
--keep class com.answufeng.log.AwLogFormatter { *; }
--keep class com.answufeng.log.AwLogFormatter$Companion { *; }
--keep class com.answufeng.log.AwLogInterceptor { *; }
--keep class com.answufeng.log.AwLogInterceptor$Chain { *; }
--keep class com.answufeng.log.AwLogInterceptor$LogResult { *; }
--keep class com.answufeng.log.AwLogInterceptor$LogResult$Accepted { *; }
--keep class com.answufeng.log.AwLogInterceptor$LogResult$Rejected { *; }
--keep class com.answufeng.log.AwLogFileManager { *; }
--keep class com.answufeng.log.AwLogFileManager$Companion { *; }
--keep class com.answufeng.log.AwDesensitizeInterceptor { *; }
--keep class com.answufeng.log.AwDesensitizeInterceptor$* { *; }
--keep class com.answufeng.log.AwFormatterDsl { *; }
--keep class com.answufeng.log.AwCrashTree { *; }
+-keep class com.answufeng.log.AwLogger { public *; }
+-keep class com.answufeng.log.AwLogConfig { public *; }
+-keep class com.answufeng.log.AwLogFormatter { public *; }
+-keep class com.answufeng.log.AwLogFormatter$Companion { public *; }
+-keep class com.answufeng.log.AwLogInterceptor { public *; }
+-keep class com.answufeng.log.AwLogInterceptor$Chain { public *; }
+-keep class com.answufeng.log.AwLogInterceptor$LogResult { public *; }
+-keep class com.answufeng.log.AwLogInterceptor$LogResult$Accepted { public *; }
+-keep class com.answufeng.log.AwLogInterceptor$LogResult$Rejected { public *; }
+-keep class com.answufeng.log.AwLogFileManager { public *; }
+-keep class com.answufeng.log.AwLogFileManager$Companion { public *; }
+-keep class com.answufeng.log.AwDesensitizeInterceptor { public *; }
+-keep class com.answufeng.log.AwDesensitizeInterceptor$* { public *; }
+-keep class com.answufeng.log.AwFormatterDsl { public *; }
+-keep class com.answufeng.log.AwLogListener { public *; }
 
 -keep @interface com.answufeng.log.AwLogDsl
 
