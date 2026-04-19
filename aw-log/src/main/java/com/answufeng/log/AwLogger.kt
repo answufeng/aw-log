@@ -396,16 +396,28 @@ object AwLogger {
     private fun formatXml(xml: String): String {
         val sb = StringBuilder()
         var indent = 0
-        val regex = Regex("(<[^>]+>)")
+        val regex = Regex("(<[^>]+>)|([^<]+)")
         val tokens = regex.findAll(xml).map { it.value }.toList()
         for (token in tokens) {
-            if (token.startsWith("</")) {
+            val trimmed = token.trim()
+            if (trimmed.isEmpty()) continue
+            if (trimmed.startsWith("</")) {
                 indent = maxOf(0, indent - 1)
-            }
-            repeat(indent) { sb.append("  ") }
-            sb.appendLine(token)
-            if (token.startsWith("<") && !token.startsWith("</") && !token.endsWith("/>") && !token.contains("</")) {
+                repeat(indent) { sb.append("  ") }
+                sb.appendLine(trimmed)
+            } else if (trimmed.startsWith("<") && trimmed.endsWith("/>")) {
+                repeat(indent) { sb.append("  ") }
+                sb.appendLine(trimmed)
+            } else if (trimmed.startsWith("<") && trimmed.contains("</")) {
+                repeat(indent) { sb.append("  ") }
+                sb.appendLine(trimmed)
+            } else if (trimmed.startsWith("<")) {
+                repeat(indent) { sb.append("  ") }
+                sb.appendLine(trimmed)
                 indent++
+            } else {
+                repeat(indent) { sb.append("  ") }
+                sb.appendLine(trimmed)
             }
         }
         return sb.toString().trimEnd()
