@@ -38,6 +38,14 @@ object AwLogFileManager {
         executor.shutdown()
     }
 
+    /**
+     * 压缩旧日志文件（非今天的 .txt 文件会被压缩为 .gz 并删除原文件）。
+     *
+     * 此方法为阻塞操作，必须在后台线程调用。
+     *
+     * @param logDir 日志文件所在目录路径
+     * @return 成功压缩的文件数量
+     */
     @WorkerThread
     @JvmStatic
     fun compressOldLogs(logDir: String): Int {
@@ -72,6 +80,12 @@ object AwLogFileManager {
         return count
     }
 
+    /**
+     * 获取日志文件的总大小。
+     *
+     * @param logDir 日志文件所在目录路径
+     * @return 所有日志文件的总字节数，目录不存在时返回 0
+     */
     @JvmStatic
     fun getTotalSize(logDir: String): Long {
         val dir = File(logDir)
@@ -82,6 +96,12 @@ object AwLogFileManager {
             ?: 0
     }
 
+    /**
+     * 获取日志文件列表，按修改时间降序排列。
+     *
+     * @param logDir 日志文件所在目录路径
+     * @return 日志文件列表，目录不存在时返回空列表
+     */
     @JvmStatic
     fun getLogFiles(logDir: String): List<File> {
         val dir = File(logDir)
@@ -92,6 +112,12 @@ object AwLogFileManager {
             ?: emptyList()
     }
 
+    /**
+     * 获取日志目录的可用空间。
+     *
+     * @param logDir 日志文件所在目录路径
+     * @return 可用空间的字节数，目录不存在时返回 0
+     */
     @JvmStatic
     fun getAvailableSpace(logDir: String): Long {
         val dir = File(logDir)
@@ -99,6 +125,15 @@ object AwLogFileManager {
         return dir.usableSpace
     }
 
+    /**
+     * 将所有日志文件导出为 ZIP 压缩包。
+     *
+     * 此方法为阻塞操作，必须在后台线程调用。
+     *
+     * @param logDir 日志文件所在目录路径
+     * @param outputFile 输出的 ZIP 文件
+     * @return 导出成功返回输出文件，失败或无日志文件时返回 null
+     */
     @WorkerThread
     @JvmStatic
     fun exportLogs(logDir: String, outputFile: File): File? {
@@ -133,6 +168,14 @@ object AwLogFileManager {
         }
     }
 
+    /**
+     * 删除所有日志文件。
+     *
+     * 此方法为阻塞操作，必须在后台线程调用。
+     *
+     * @param logDir 日志文件所在目录路径
+     * @return 成功删除的文件数量
+     */
     @WorkerThread
     @JvmStatic
     fun clearAll(logDir: String): Int {
@@ -149,6 +192,15 @@ object AwLogFileManager {
         return count
     }
 
+    /**
+     * 删除指定日期之前的日志文件。
+     *
+     * 此方法为阻塞操作，必须在后台线程调用。
+     *
+     * @param logDir 日志文件所在目录路径
+     * @param beforeDate 截止日期，此日期之前的文件将被删除
+     * @return 成功删除的文件数量
+     */
     @WorkerThread
     @JvmStatic
     fun clearBefore(logDir: String, beforeDate: Date): Int {
@@ -166,6 +218,16 @@ object AwLogFileManager {
         return count
     }
 
+    /**
+     * 在日志文件中搜索包含关键词的行。
+     *
+     * 此方法为阻塞操作，必须在后台线程调用。
+     *
+     * @param logDir 日志文件所在目录路径
+     * @param keyword 搜索关键词，忽略大小写
+     * @param maxResults 最大返回结果数，默认 100
+     * @return 匹配的行列表，格式为 "[文件名] 日志行内容"
+     */
     @WorkerThread
     @JvmStatic
     fun search(logDir: String, keyword: String, maxResults: Int = 100): List<String> {
@@ -193,6 +255,12 @@ object AwLogFileManager {
         return results
     }
 
+    /**
+     * 异步压缩旧日志文件。
+     *
+     * @param logDir 日志文件所在目录路径
+     * @param callback 压缩完成后的回调，参数为成功压缩的文件数量，在后台线程执行
+     */
     @JvmStatic
     fun compressOldLogsAsync(logDir: String, callback: ((Int) -> Unit)? = null) {
         executor.execute {
@@ -201,6 +269,13 @@ object AwLogFileManager {
         }
     }
 
+    /**
+     * 异步导出日志为 ZIP 文件。
+     *
+     * @param logDir 日志文件所在目录路径
+     * @param outputFile 输出的 ZIP 文件
+     * @param callback 导出完成后的回调，参数为输出文件或 null，在后台线程执行
+     */
     @JvmStatic
     fun exportLogsAsync(logDir: String, outputFile: File, callback: ((File?) -> Unit)? = null) {
         executor.execute {
@@ -209,6 +284,12 @@ object AwLogFileManager {
         }
     }
 
+    /**
+     * 异步删除所有日志文件。
+     *
+     * @param logDir 日志文件所在目录路径
+     * @param callback 删除完成后的回调，参数为成功删除的文件数量，在后台线程执行
+     */
     @JvmStatic
     fun clearAllAsync(logDir: String, callback: ((Int) -> Unit)? = null) {
         executor.execute {
@@ -217,6 +298,13 @@ object AwLogFileManager {
         }
     }
 
+    /**
+     * 异步删除指定日期之前的日志文件。
+     *
+     * @param logDir 日志文件所在目录路径
+     * @param beforeDate 截止日期
+     * @param callback 删除完成后的回调，参数为成功删除的文件数量，在后台线程执行
+     */
     @JvmStatic
     fun clearBeforeAsync(logDir: String, beforeDate: Date, callback: ((Int) -> Unit)? = null) {
         executor.execute {
@@ -225,6 +313,14 @@ object AwLogFileManager {
         }
     }
 
+    /**
+     * 异步搜索日志内容。
+     *
+     * @param logDir 日志文件所在目录路径
+     * @param keyword 搜索关键词
+     * @param maxResults 最大返回结果数
+     * @param callback 搜索完成后的回调，参数为匹配的行列表，在后台线程执行
+     */
     @JvmStatic
     fun searchAsync(logDir: String, keyword: String, maxResults: Int = 100, callback: ((List<String>) -> Unit)? = null) {
         executor.execute {

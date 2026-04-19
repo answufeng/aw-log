@@ -96,6 +96,7 @@ object AwLogger {
             Timber.forest()
                 .filterIsInstance<AwFileTree>()
                 .forEach { it.shutdown() }
+            AwLogFileManager.shutdown()
             Timber.uprootAll()
             interceptors.clear()
             listeners.clear()
@@ -210,7 +211,7 @@ object AwLogger {
     private fun formatMessage(message: String, args: Array<out Any?>): String {
         return if (args.isEmpty()) message
         else try {
-            String.format(message, *args)
+            String.format(java.util.Locale.US, message, *args)
         } catch (e: Exception) {
             "$message [format error: ${e.message}]"
         }
