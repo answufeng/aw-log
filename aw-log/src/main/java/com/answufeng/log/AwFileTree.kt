@@ -14,6 +14,21 @@ import java.util.concurrent.CountDownLatch
 import java.util.concurrent.ScheduledThreadPoolExecutor
 import java.util.concurrent.TimeUnit
 
+/**
+ * 文件日志树
+ *
+ * 用于将日志写入文件，支持自动轮转、清理旧文件和低磁盘空间检测
+ *
+ * @param logDir 日志存储目录
+ * @param maxFileSize 单个日志文件最大大小（字节），默认 5MB
+ * @param maxFileCount 最大日志文件数量，默认 10
+ * @param minPriority 最小日志优先级，默认 DEBUG
+ * @param formatter 日志格式化器，默认使用 [AwLogFormatter.default()]
+ * @param flushIntervalMs 日志刷新间隔（毫秒），默认 3000ms
+ *
+ * @see Timber.Tree
+ * @see AwLogFormatter
+ */
 internal class AwFileTree(
     private val logDir: String,
     private val maxFileSize: Long = 5L * 1024 * 1024,

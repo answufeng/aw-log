@@ -3,6 +3,15 @@ package com.answufeng.log
 import android.util.Log
 import timber.log.Timber
 
+/**
+ * 崩溃日志树
+ *
+ * 用于捕获未处理的异常并记录崩溃日志
+ *
+ * @param crashHandler 崩溃处理回调，可用于自定义崩溃处理逻辑
+ *
+ * @see Timber.Tree
+ */
 internal class AwCrashTree(
     private val crashHandler: ((String?, Throwable?, String?) -> Unit)? = null
 ) : Timber.Tree() {
