@@ -23,6 +23,13 @@
 - **isLoggable** — 判断指定级别是否会被输出，避免不必要的日志构造开销
 - **minSdk 24+** — 覆盖 99%+ 的 Android 设备
 
+## 环境要求
+
+- **minSdk**: 24+
+- **Kotlin**: 2.0+
+- **Android Gradle Plugin**: 8.0+
+- **Timber**: 5.0.1
+
 ## 引入
 
 ```kotlin
@@ -357,6 +364,19 @@ AwLogListener                  → 日志监听器（实时回调）
 - **单线程池**：AwFileTree 合并写入和调度为单个 ScheduledThreadPoolExecutor，减少线程开销
 - **周期性文件清理**：每 100 次写入检查一次文件数量，避免高频日志场景下的性能开销
 - **共享线程池**：AwLogFileManager 异步操作使用共享线程池，避免频繁创建线程
+
+## 线程安全
+
+| 组件 | 线程安全说明 |
+|------|--------------|
+| `AwLogger` | ✅ 所有日志方法线程安全，内部使用 synchronized 保护 |
+| `AwDebugTree` | ✅ Logcat 输出线程安全 |
+| `AwFileTree` | ✅ 文件写入在单线程执行器中串行执行，线程安全 |
+| `AwCrashTree` | ✅ 崩溃收集线程安全 |
+| `AwLogInterceptor` | ✅ 拦截器链线程安全，异常隔离 |
+| `AwLogFormatter` | ⚠️ SimpleDateFormat 使用 ThreadLocal 包装，线程安全 |
+| `AwLogFileManager` | ✅ 异步操作使用共享线程池，线程安全 |
+| `AwLogListener` | ⚠️ 监听器回调在日志写入线程执行，需自行保证线程安全 |
 
 ## 兼容性
 
