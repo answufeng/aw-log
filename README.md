@@ -413,3 +413,5 @@ A: 安全。SimpleDateFormat 使用 ThreadLocal 包装，AwLogger.init() 使用 
 ## 许可证
 
 Apache License 2.0，详见 [LICENSE](LICENSE)。
+
+# Last updated: 2026年 4月 21日
