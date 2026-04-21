@@ -20,6 +20,16 @@ internal class AwCrashTree(
 
     private var hasInstalledHandler = false
 
+    /**
+     * 安装全局崩溃处理器。
+     *
+     * 会保存原有的 [Thread.UncaughtExceptionHandler]，并在捕获崩溃后调用原有处理器。
+     * 幂等操作，重复调用只会安装一次。
+     *
+     * 崩溃发生时：
+     * 1. 调用 [crashHandler] 回调（若提供）或输出到 Logcat
+     * 2. 将崩溃传递回原有 Handler
+     */
     fun installCrashHandler() {
         if (hasInstalledHandler) return
         hasInstalledHandler = true

@@ -16,6 +16,16 @@ import java.util.zip.GZIPOutputStream
 import java.util.zip.ZipEntry
 import java.util.zip.ZipOutputStream
 
+/**
+ * 日志文件管理工具。
+ *
+ * 提供日志文件的压缩、导出、清理、搜索等功能。
+ * 异步操作使用共享的单线程 ExecutorService（守护线程），避免频繁创建线程。
+ *
+ * 线程模型：所有同步方法（[compressOldLogs]、[exportLogs] 等）为阻塞操作，
+ * 必须在后台线程调用。异步方法（[compressOldLogsAsync] 等）在内部线程池执行，
+ * 回调也在后台线程执行，如需更新 UI 请自行切换主线程。
+ */
 object AwLogFileManager {
 
     private const val TAG = "AwLogFileManager"

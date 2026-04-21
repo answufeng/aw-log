@@ -52,6 +52,21 @@ dependencies {
 
 在 `Application.onCreate()` 中初始化：
 
+#### 最小可用示例
+
+```kotlin
+class MyApp : Application() {
+    override fun onCreate() {
+        super.onCreate()
+        AwLogger.init {
+            debug = BuildConfig.DEBUG
+        }
+    }
+}
+```
+
+#### 完整配置示例
+
 ```kotlin
 class MyApp : Application() {
     override fun onCreate() {
@@ -391,15 +406,9 @@ AwLogListener                  → 日志监听器（实时回调）
 
 不需要额外配置。库已通过 `consumer-rules.pro` 自动配置 ProGuard 规则，引入依赖即生效。
 
-## 迁移指南（1.x → 2.x）
+## 迁移指南
 
-| 变更 | 1.x | 2.x |
-|------|-----|-----|
-| Tag 设置 | `AwLogger.tag("MyTag").d("msg")` | `AwLogger.d("MyTag", "msg")` 或 `AwLogger.d("MyTag") { "msg" }` |
-| 格式化日志 | `AwLogger.d(String.format("id=%d", id))` | `AwLogger.d("id=%d", id)` 或 `AwLogger.d("Tag", "id=%d", id)` |
-| setMinPriority | `AwLogger.setMinPriority(Log.WARN)` | `val old = AwLogger.setMinPriority(Log.WARN)` (返回旧值) |
-| isLoggable | 无 | `AwLogger.isLoggable(Log.DEBUG)` |
-| XML 格式化 | 无 | `AwLogger.xml(xmlString, "Tag")` |
+从 1.x 升级到 2.x 请参考 [MIGRATION.md](MIGRATION.md)。
 
 ## FAQ
 

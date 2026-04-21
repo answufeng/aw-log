@@ -17,7 +17,16 @@ import java.util.concurrent.TimeUnit
 /**
  * 文件日志树
  *
- * 用于将日志写入文件，支持自动轮转、清理旧文件和低磁盘空间检测
+ * 用于将日志写入文件，支持以下特性：
+ * - 按日期分文件存储
+ * - 文件大小超限自动轮转
+ * - 异步队列写入（单线程执行器，队列最大 1024 条，溢出时丢弃最旧日志）
+ * - 定时刷新 + ERROR 级别即时刷新
+ * - 低磁盘空间检测（低于 10MB 时跳过写入）
+ * - 定期清理超出数量限制的旧文件
+ *
+ * 线程模型：所有文件写入操作在单线程 ScheduledThreadPoolExecutor 中串行执行，
+ * [flush] 和 [shutdown] 通过 CountDownLatch/awaitTermination 阻塞等待完成。
  *
  * @param logDir 日志存储目录
  * @param maxFileSize 单个日志文件最大大小（字节），默认 5MB

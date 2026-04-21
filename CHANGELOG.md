@@ -1,60 +1,29 @@
 # Changelog
 
-## 2.0.0
+## 1.0.0 (2026-04-21)
 
-### 新增
-- **AwLogListener** — 日志监听器接口，实时获取日志输出（UI 展示、远程上报）
-- **AwLogger.setMinPriority()** — 运行时动态修改日志级别，无需重新初始化
-- **AwLogger.getFileDir()** — 获取文件日志目录
-- **AwLogger.e(t, tag) { message }** — Throwable + Tag + Lambda 组合方法
-- **AwLogFormatter.compact()** — 简洁模式格式化器（HH:mm:ss.SSS）
-- **AwLogFormatter.verbose()** — 详细模式格式化器（默认）
-- **AwFormatterDsl.showThread** — 格式化器线程信息选项
-- **AwLogFileManager.search()** — 按关键词搜索日志内容
-- **AwLogFileManager.searchAsync()** — 异步搜索日志
-- **AwLogFileManager.clearBefore()** — 按日期范围清理日志
-- **AwLogFileManager.clearBeforeAsync()** — 异步按日期清理
-- **AwFileTree.shutdown()** — 优雅关闭文件日志线程池
+### Features
+- **AwDebugTree** — Logcat 输出，自动 Tag 包含方法名与调用位置（一次栈遍历，零冗余）
+- **AwFileTree** — 文件日志，按日期分文件、大小限制轮转、异步写入、智能刷新（定时 + ERROR 即时）、磁盘空间检查、队列溢出保护
+- **AwCrashTree** — 崩溃收集（UncaughtExceptionHandler + ERROR 级别捕获），支持自定义回调
+- **AwLogInterceptor** — 责任链模式拦截器，支持过滤、脱敏、消息增强、Tag 修改
+- **AwDesensitizeInterceptor** — 内置脱敏拦截器，预置手机号/身份证/银行卡/邮箱/key=value 规则
+- **AwLogFormatter** — 自定义日志格式化，可定制时间格式、分隔符、显示字段、线程信息
+- **AwLogFileManager** — 压缩旧日志、导出为 ZIP、查询大小、批量清理、按日期清理、关键词搜索
+- **AwLogListener** — 日志监听器，实时获取日志输出
+- **JSON / XML 格式化** — 自动识别 JSONObject/JSONArray 并美化输出，支持 XML 美化
+- **Lambda 延迟求值** — 关闭日志时零开销，支持 Lambda + Tag 组合
+- **DSL 配置** — 简洁优雅的初始化方式
+- **动态级别调整** — 运行时修改日志级别，返回旧值方便恢复
+- **isLoggable** — 判断指定级别是否会被输出
 
-### 修复
-- **[BUG-3]** `vararg args` 参数被完全忽略，现在通过 `String.format` 正确格式化
-- **[BUG-1]** AwFileTree 重新初始化时线程池泄漏，`reset()` 和 `init()` 现在会关闭旧线程池
-- **[BUG-2]** flushRunnable 竞态条件，改用 `ScheduledExecutorService.scheduleAtFixedRate`
-- **[BUG-4]** 统一 AwFileTree 同步方式，全部使用 `synchronized` 块
-- **[BUG-5]** README minSdk 从 21+ 修正为 24+（与 build.gradle.kts 一致）
-
-### 改进
-- **AwCrashTree** 增加真正的崩溃收集（设置 UncaughtExceptionHandler）
-- **AwFileTree** 使用 `ScheduledExecutorService` 替代 `ThreadPoolExecutor` + `Thread.sleep`
-- **AwFileTree** `cleanOldFiles` 改为周期性检查（每 100 次写入检查一次），避免高频日志性能开销
-- **AwFileTree** 内存维护文件写入字节数计数器，避免每次 `file.length()` IO 操作
-- **AwDesensitizeInterceptor** PHONE/ID_CARD/BANK_CARD/EMAIL 规则增加词边界匹配 `\b`，减少误匹配
-- **AwDesensitizeInterceptor** BANK_CARD 规则增加常见卡 BIN 前缀校验
-- **AwLogFileManager** 异步方法使用共享线程池，避免频繁创建线程
-- **移除** `AwLogger.tag()` 方法（暴露 Timber 内部，破坏封装性）
-
-### Demo 改进
-- 增加 Info/Warn 日志级别按钮
-- 增加实时日志显示区域（通过 AwLogListener）
-- 增加格式化日志、异常+Lambda、并发日志、动态级别演示
-- 增加日志搜索功能演示
-- 增加 AlertDialog 选择日志级别
-- 修复 AndroidManifest 主题不一致问题
-
-## 1.0.0
-
-- Initial release
-- Package: `com.answufeng.log`
-- AwLogger: DSL 初始化入口，支持 v/d/i/w/e/wtf/json/tag
-- AwDebugTree: Logcat 输出，自动 Tag 与调用者定位
-- AwFileTree: 文件日志，按日期分文件、大小限制轮转、异步写入、BufferedWriter 复用、背压保护
-- AwCrashTree: Error/Assert 级别捕获，支持自定义回调，无回调时默认 Log.e 输出
-- AwLogInterceptor: 日志拦截器接口，支持过滤、脱敏、增强
-- AwLogFormatter: 自定义日志格式化接口，提供 DSL Builder 和默认实现
-- AwLogFileManager: 压缩旧日志、导出 ZIP、查询大小、批量清理
-- Lambda 延迟求值，关闭日志时零开销
-- 全局最低日志级别配置 (minPriority)
-- 文件日志最低级别配置 (fileMinPriority)
-- flush() 确保日志写入磁盘
-- reset() 重置日志系统
-- minSdk 24+
+### Performance
+- 拦截器单次执行，Tree 不重复拦截
+- 智能文件刷新：定时刷新 + ERROR 级别即时 flush
+- Lambda 零开销
+- 线程安全格式化：ThreadLocal 包装 SimpleDateFormat
+- 单次栈遍历消除双重开销
+- 异常隔离不中断链路
+- 内存文件大小追踪避免 IO
+- 队列溢出保护（最大 1024 条）
+- 单线程池减少开销

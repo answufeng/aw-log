@@ -143,11 +143,32 @@ object AwLogger {
     /** 获取文件日志目录路径，未启用文件日志时返回空字符串。 */
     fun getFileDir(): String = fileDir
 
+    /**
+     * 内部方法：判断指定级别的日志是否会被输出。
+     *
+     * 与 [isLoggable] 相同，但供 inline 函数内部调用以避免反射开销。
+     * 线程安全（读取 @Volatile 变量）。
+     *
+     * @param priority 日志级别
+     * @return true 表示该级别的日志会被输出
+     */
     @PublishedApi
     internal fun shouldLog(priority: Int): Boolean {
         return Timber.treeCount > 0 && minPriority <= priority
     }
 
+    /**
+     * 内部方法：执行拦截器链处理日志。
+     *
+     * 按添加顺序依次执行拦截器，任一拦截器抛出异常时会被自动捕获，
+     * 并返回 Accepted 结果以不中断日志输出。线程安全。
+     *
+     * @param priority 日志级别
+     * @param tag 日志标签
+     * @param message 日志消息
+     * @param t 关联的异常
+     * @return 拦截结果
+     */
     @PublishedApi
     internal fun intercept(priority: Int, tag: String?, message: String, t: Throwable?): AwLogInterceptor.LogResult {
         if (interceptors.isEmpty()) return AwLogInterceptor.LogResult.Accepted(message, tag)
@@ -177,6 +198,17 @@ object AwLogger {
         }
     }
 
+    /**
+     * 内部方法：实际执行日志输出的核心方法。
+     *
+     * 先经过拦截器链处理，然后通知监听器，最后分发到 Timber 各 Tree。
+     * 线程安全，由调用方确保在正确的线程上下文中调用。
+     *
+     * @param priority 日志级别
+     * @param tag 日志标签
+     * @param message 日志消息
+     * @param t 关联的异常
+     */
     @PublishedApi
     internal fun logInternal(priority: Int, tag: String? = null, message: String, t: Throwable? = null) {
         val result = intercept(priority, tag, message, t)
@@ -208,6 +240,16 @@ object AwLogger {
         }
     }
 
+    /**
+     * 内部方法：格式化日志消息，支持 String.format 风格。
+     *
+     * 使用 [java.util.Locale.US] 确保格式化行为在不同语言环境下一致。
+     * 格式化失败时返回原始消息并附加错误信息。线程安全。
+     *
+     * @param message 原始消息模板
+     * @param args 格式化参数
+     * @return 格式化后的消息
+     */
     private fun formatMessage(message: String, args: Array<out Any?>): String {
         return if (args.isEmpty()) message
         else try {
@@ -372,6 +414,24 @@ object AwLogger {
     }
 
     /**
+     * 格式化输出 JSON 日志，支持 String.format 风格占位符。
+     *
+     * @param json JSON 字符串模板，为 null 或空白时输出提示信息
+     * @param tag 日志标签
+     * @param priority 日志级别，默认 [Log.DEBUG]
+     * @param args 格式化参数
+     */
+    fun json(json: String?, tag: String, priority: Int = Log.DEBUG, vararg args: Any?) {
+        val formattedJson = if (args.isEmpty()) json
+        else json?.let { formatMessage(it, args) }
+        json(
+            json = formattedJson,
+            tag = tag,
+            priority = priority
+        )
+    }
+
+    /**
      * 格式化输出 XML 日志，自动缩进美化。
      *
      * @param xml XML 字符串，为 null 或空白时输出提示信息
@@ -397,6 +457,24 @@ object AwLogger {
         } catch (e: Exception) {
             logInternal(Log.ERROR, tag, "XML format error", e)
         }
+    }
+
+    /**
+     * 格式化输出 XML 日志，支持 String.format 风格占位符。
+     *
+     * @param xml XML 字符串模板，为 null 或空白时输出提示信息
+     * @param tag 日志标签
+     * @param priority 日志级别，默认 [Log.DEBUG]
+     * @param args 格式化参数
+     */
+    fun xml(xml: String?, tag: String, priority: Int = Log.DEBUG, vararg args: Any?) {
+        val formattedXml = if (args.isEmpty()) xml
+        else xml?.let { formatMessage(it, args) }
+        xml(
+            xml = formattedXml,
+            tag = tag,
+            priority = priority
+        )
     }
 
     private fun formatXml(xml: String): String {

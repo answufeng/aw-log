@@ -5,6 +5,25 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
+/**
+ * 日志格式化器接口，用于自定义文件日志的输出格式。
+ *
+ * 实现此接口可控制日志行的时间格式、分隔符、显示字段等。
+ * 内置实现包括 [default]（详细模式）、[compact]（简洁模式）。
+ *
+ * 线程安全要求：实现类应确保 [format] 方法线程安全。
+ * 内置实现使用 ThreadLocal 包装 SimpleDateFormat 保证线程安全。
+ *
+ * 使用示例：
+ * ```kotlin
+ * AwLogger.init {
+ *     fileFormatter = AwLogFormatter.create {
+ *         timePattern = "HH:mm:ss.SSS"
+ *         showThread = true
+ *     }
+ * }
+ * ```
+ */
 interface AwLogFormatter {
 
     fun format(priority: Int, tag: String?, message: String, throwable: Throwable?): String
@@ -111,6 +130,14 @@ private object CompactLogFormatter : AwLogFormatter {
     }
 }
 
+/**
+ * 将日志优先级转换为单字符字符串。
+ *
+ * 用于文件日志格式化时显示级别标识。
+ *
+ * @param priority 日志级别常量
+ * @return 单字符级别标识（V/D/I/W/E/A），未知级别返回 "?"
+ */
 internal fun priorityToString(priority: Int): String = when (priority) {
     Log.VERBOSE -> "V"
     Log.DEBUG -> "D"
