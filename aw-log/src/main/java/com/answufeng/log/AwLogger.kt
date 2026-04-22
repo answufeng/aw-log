@@ -10,6 +10,8 @@ import java.util.concurrent.CopyOnWriteArrayList
  * 支持 Logcat 调试输出、文件日志持久化、崩溃收集、日志拦截与脱敏、
  * 自定义格式化、JSON/XML 格式化输出等功能。
  *
+ * **性能**：超大 JSON/XML 会在内存中完整格式化；生产环境建议先截断再调用 [json]/[xml]，或仅调试期开启。
+ *
  * 使用前须调用 [init] 进行初始化，推荐在 `Application.onCreate()` 中调用。
  */
 object AwLogger {
