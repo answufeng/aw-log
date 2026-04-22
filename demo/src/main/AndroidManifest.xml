@@ -3,7 +3,7 @@
     <application
         android:name=".DemoApp"
         android:allowBackup="false"
-        android:label="📋 日志库演示"
+        android:label="aw-log Demo"
         android:theme="@style/Theme.AwLogdemo">
         <activity
             android:name=".MainActivity"

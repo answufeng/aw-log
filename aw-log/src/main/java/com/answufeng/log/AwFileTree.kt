@@ -7,8 +7,9 @@ import java.io.File
 import java.io.FileWriter
 import java.io.PrintWriter
 import java.io.StringWriter
-import java.text.SimpleDateFormat
-import java.util.Date
+import java.time.LocalDate
+import java.time.ZoneId
+import java.time.format.DateTimeFormatter
 import java.util.Locale
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.ScheduledThreadPoolExecutor
@@ -55,7 +56,7 @@ internal class AwFileTree(
         removeOnCancelPolicy = true
     }
 
-    private val dateFormatter = SimpleDateFormat("yyyy-MM-dd", Locale.US)
+    private val dateFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd", Locale.US)
 
     @Volatile
     private var currentWriter: BufferedWriter? = null
@@ -163,7 +164,7 @@ internal class AwFileTree(
             return
         }
 
-        val today = dateFormatter.format(Date())
+        val today = LocalDate.now(ZoneId.systemDefault()).format(dateFormatter)
         val fileName = "log_$today.txt"
 
         rotateIfNeeded(dir, fileName)
@@ -183,7 +184,7 @@ internal class AwFileTree(
             pw.flush()
             val stackTrace = sw.toString()
             writer.write(stackTrace)
-            currentFileSize += stackTrace.length.toLong()
+            currentFileSize += stackTrace.toByteArray(Charsets.UTF_8).size.toLong()
         }
 
         if (priority >= Log.ERROR) {

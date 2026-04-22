@@ -7,11 +7,14 @@ import java.io.BufferedOutputStream
 import java.io.File
 import java.io.FileInputStream
 import java.io.FileOutputStream
-import java.text.SimpleDateFormat
+import java.time.LocalDate
+import java.time.ZoneId
+import java.time.format.DateTimeFormatter
 import java.util.Date
 import java.util.Locale
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
+import java.util.zip.GZIPInputStream
 import java.util.zip.GZIPOutputStream
 import java.util.zip.ZipEntry
 import java.util.zip.ZipOutputStream
@@ -30,12 +33,23 @@ object AwLogFileManager {
 
     private const val TAG = "AwLogFileManager"
 
-    private val dateFormatter = SimpleDateFormat("yyyy-MM-dd", Locale.US)
+    private val dateFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd", Locale.US)
 
-    private val executor: ExecutorService =
+    private val executorLock = Any()
+
+    private var executor: ExecutorService = newExecutor()
+
+    private fun newExecutor(): ExecutorService =
         Executors.newSingleThreadExecutor { runnable ->
             Thread(runnable, "AwLog-FileManager").apply { isDaemon = true }
         }
+
+    private fun obtainExecutor(): ExecutorService = synchronized(executorLock) {
+        if (executor.isShutdown) {
+            executor = newExecutor()
+        }
+        executor
+    }
 
     /**
      * 关闭文件管理器的后台线程池。
@@ -45,7 +59,9 @@ object AwLogFileManager {
      */
     @JvmStatic
     fun shutdown() {
-        executor.shutdown()
+        synchronized(executorLock) {
+            executor.shutdown()
+        }
     }
 
     /**
@@ -62,7 +78,7 @@ object AwLogFileManager {
         val dir = File(logDir)
         if (!dir.exists()) return 0
 
-        val today = dateFormatter.format(Date())
+        val today = LocalDate.now(ZoneId.systemDefault()).format(dateFormatter)
         val todayPrefix = "log_$today"
 
         val txtFiles = dir.listFiles { file ->
@@ -229,7 +245,7 @@ object AwLogFileManager {
     }
 
     /**
-     * 在日志文件中搜索包含关键词的行。
+     * 在日志文件中搜索包含关键词的行（扫描 `log_*.txt` 与 `log_*.txt.gz`，新到旧）。
      *
      * 此方法为阻塞操作，必须在后台线程调用。
      *
@@ -246,16 +262,20 @@ object AwLogFileManager {
 
         val results = mutableListOf<String>()
         val logFiles = dir.listFiles()
-            ?.filter { it.isFile && it.name.startsWith("log_") && it.name.endsWith(".txt") }
+            ?.filter { f ->
+                f.isFile && f.name.startsWith("log_") &&
+                    (f.name.endsWith(".txt") || f.name.endsWith(".txt.gz"))
+            }
             ?.sortedByDescending { it.lastModified() }
             ?: return emptyList()
 
         for (file in logFiles) {
             try {
-                file.forEachLine { line ->
+                searchFileLines(file) { line ->
                     if (line.contains(keyword, ignoreCase = true)) {
                         results.add("[${file.name}] $line")
                     }
+                    results.size < maxResults
                 }
             } catch (e: Exception) {
                 Log.w(TAG, "Failed to search in file: ${file.name}", e)
@@ -273,7 +293,7 @@ object AwLogFileManager {
      */
     @JvmStatic
     fun compressOldLogsAsync(logDir: String, callback: ((Int) -> Unit)? = null) {
-        executor.execute {
+        obtainExecutor().execute {
             val count = compressOldLogs(logDir)
             callback?.invoke(count)
         }
@@ -288,7 +308,7 @@ object AwLogFileManager {
      */
     @JvmStatic
     fun exportLogsAsync(logDir: String, outputFile: File, callback: ((File?) -> Unit)? = null) {
-        executor.execute {
+        obtainExecutor().execute {
             val result = exportLogs(logDir, outputFile)
             callback?.invoke(result)
         }
@@ -302,7 +322,7 @@ object AwLogFileManager {
      */
     @JvmStatic
     fun clearAllAsync(logDir: String, callback: ((Int) -> Unit)? = null) {
-        executor.execute {
+        obtainExecutor().execute {
             val count = clearAll(logDir)
             callback?.invoke(count)
         }
@@ -317,7 +337,7 @@ object AwLogFileManager {
      */
     @JvmStatic
     fun clearBeforeAsync(logDir: String, beforeDate: Date, callback: ((Int) -> Unit)? = null) {
-        executor.execute {
+        obtainExecutor().execute {
             val count = clearBefore(logDir, beforeDate)
             callback?.invoke(count)
         }
@@ -333,9 +353,27 @@ object AwLogFileManager {
      */
     @JvmStatic
     fun searchAsync(logDir: String, keyword: String, maxResults: Int = 100, callback: ((List<String>) -> Unit)? = null) {
-        executor.execute {
+        obtainExecutor().execute {
             val results = search(logDir, keyword, maxResults)
             callback?.invoke(results)
+        }
+    }
+
+    private fun searchFileLines(file: File, emit: (String) -> Boolean) {
+        if (file.name.endsWith(".gz")) {
+            GZIPInputStream(BufferedInputStream(FileInputStream(file), BUFFER_SIZE)).bufferedReader().use { reader ->
+                while (true) {
+                    val line = reader.readLine() ?: break
+                    if (!emit(line)) return
+                }
+            }
+        } else {
+            file.bufferedReader().use { reader ->
+                while (true) {
+                    val line = reader.readLine() ?: break
+                    if (!emit(line)) return
+                }
+            }
         }
     }
 

@@ -212,4 +212,27 @@ class AwLogFileManagerTest {
         }
         latch.await(5, java.util.concurrent.TimeUnit.SECONDS)
     }
+
+    @Test
+    fun `search includes gzipped log files`() {
+        val gz = java.io.File(tempDir, "log_2020-01-01.txt.gz")
+        java.io.FileOutputStream(gz).use { fos ->
+            java.util.zip.GZIPOutputStream(fos).use { gzos ->
+                gzos.write("needle line\n".toByteArray())
+            }
+        }
+        val results = AwLogFileManager.search(tempDir.absolutePath, "needle")
+        assertEquals(1, results.size)
+        assertTrue(results[0].contains("needle line"))
+    }
+
+    @Test
+    fun `async works after shutdown`() {
+        AwLogFileManager.shutdown()
+        val latch = java.util.concurrent.CountDownLatch(1)
+        AwLogFileManager.compressOldLogsAsync(tempDir.absolutePath) {
+            latch.countDown()
+        }
+        assertTrue(latch.await(5, java.util.concurrent.TimeUnit.SECONDS))
+    }
 }

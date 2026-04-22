@@ -10,7 +10,7 @@
 
 - **AwDebugTree** — Logcat 输出，自动 Tag 包含方法名与调用位置（一次栈遍历，零冗余）
 - **AwFileTree** — 文件日志，按日期分文件、大小限制轮转、异步写入、智能刷新（定时 + ERROR 即时）、磁盘空间检查、队列溢出保护
-- **AwCrashTree** — 崩溃收集（UncaughtExceptionHandler + ERROR 级别捕获），支持自定义回调（可对接 Firebase Crashlytics、Bugly 等）
+- **AwCrashTree** — 崩溃收集（`AwCrashCoordinator` 单次安装 UncaughtExceptionHandler）+ ERROR 级 Timber 分发；默认在 `debug=true` 时不重复打 Logcat（`crashEchoToLogcat` 可覆盖）
 - **AwLogInterceptor** — 责任链模式拦截器，支持过滤、脱敏、消息增强、Tag 修改，异常自动隔离
 - **AwDesensitizeInterceptor** — 内置脱敏拦截器，预置手机号/身份证/银行卡/邮箱/key=value 规则（带词边界匹配）
 - **AwLogFormatter** — 自定义日志格式化，可定制时间格式、分隔符、显示字段、线程信息
@@ -20,7 +20,7 @@
 - **Lambda 延迟求值** — 关闭日志时零开销，支持 Lambda + Tag 组合
 - **DSL 配置** — 简洁优雅的初始化方式
 - **动态级别调整** — 运行时修改日志级别，`setMinPriority` 返回旧值方便恢复
-- **isLoggable** — 判断指定级别是否会被输出，避免不必要的日志构造开销
+- **isLoggable / isFileLoggable** — 判断指定级别是否会被输出（全局 / 文件树），避免不必要的日志构造开销
 - **minSdk 24+** — 覆盖 99%+ 的 Android 设备
 
 ## 环境要求
@@ -146,6 +146,11 @@ if (AwLogger.isLoggable(Log.DEBUG)) {
     AwLogger.d(expensiveData)
 }
 
+// 是否会被写入文件日志（需已启用 fileLog，且满足全局 minPriority 与 fileMinPriority）
+if (AwLogger.isFileLoggable(Log.DEBUG)) {
+    // ...
+}
+
 // 获取文件日志目录
 val logDir = AwLogger.getFileDir()
 ```
@@ -226,8 +231,10 @@ AwLogger.reset()
 | `flushIntervalMs` | Long | `3000` | 文件日志定时刷新间隔（毫秒） |
 | `crashLog` | Boolean | `false` | 是否启用崩溃日志收集 |
 | `crashHandler` | Function | `null` | 崩溃处理回调 `(tag, throwable, message) -> Unit` |
+| `crashEchoToLogcat` | Boolean? | `null`（等价于 `!debug`） | `AwCrashTree` 是否对 ERROR/WTF 再写系统 Logcat；未捕获异常走 `crashHandler`/`Log.e` 不受影响 |
 | `minPriority` | Int | `Log.VERBOSE` | 全局最低日志级别 |
 | `fileFormatter` | AwLogFormatter | 默认格式化器 | 文件日志格式化器 |
+| `rejectLogOnInterceptorFailure` | Boolean | `false` | 拦截器抛错时是否丢弃该条日志（`true` 更安全，`false` 与历史行为一致并打 Logcat 警告） |
 
 ## 日志拦截器
 
@@ -356,7 +363,7 @@ AwLogger.init {
 AwLogger (入口)
     ├── AwDebugTree            → Logcat 输出（单次栈遍历）
     ├── AwFileTree             → 文件日志（异步写入、智能刷新、磁盘检查、轮转清理）
-    ├── AwCrashTree            → 崩溃收集（UncaughtExceptionHandler + ERROR 级别回调）
+    ├── AwCrashTree            → 崩溃收集（Coordinator + 可选 ERROR Logcat 回显）
     └── Custom Trees           → 用户自定义 Tree
 
 AwLogInterceptor (Chain)       → 责任链拦截器（过滤/脱敏/增强/Tag修改）
@@ -371,14 +378,15 @@ AwLogListener                  → 日志监听器（实时回调）
 - **拦截器单次执行**：拦截仅在 AwLogger 层执行一次，Tree 不再重复拦截
 - **智能文件刷新**：ScheduledThreadPoolExecutor 定时刷新（默认 3 秒）+ ERROR 级别即时 flush
 - **Lambda 零开销**：日志关闭时 Lambda 完全不执行
-- **线程安全格式化**：SimpleDateFormat 使用 ThreadLocal 包装，消除多线程竞争
+- **线程安全格式化**：内置 `AwLogFormatter` 对 `SimpleDateFormat` 使用 ThreadLocal；`AwFileTree` / `AwLogFileManager` 的日期字段使用 `java.time`
+- **JSON/XML 短路**：级别被全局 `minPriority` 过滤时不解析大字符串
 - **单次栈遍历**：AwDebugTree 将方法位置信息编码到 Tag 中，消除双重栈遍历
-- **异常隔离**：拦截器链中任一拦截器异常不会中断链路
+- **拦截器容错**：拦截器抛错时打 Logcat 警告；可选 `rejectLogOnInterceptorFailure = true` 丢弃该条日志（强合规）
 - **内存文件大小追踪**：避免每次写入时调用 file.length() IO 操作（含 throwable 堆栈字节数）
 - **队列溢出保护**：AwFileTree 日志队列最大 1024 条，满时丢弃最旧日志并输出警告，防止 OOM
 - **单线程池**：AwFileTree 合并写入和调度为单个 ScheduledThreadPoolExecutor，减少线程开销
 - **周期性文件清理**：每 100 次写入检查一次文件数量，避免高频日志场景下的性能开销
-- **共享线程池**：AwLogFileManager 异步操作使用共享线程池，避免频繁创建线程
+- **文件管理线程池**：AwLogFileManager 使用单线程池；`reset`/`shutdown` 后首次异步任务会自动重建，避免线程泄漏又保留可重复初始化能力
 
 ## 线程安全
 
@@ -390,7 +398,7 @@ AwLogListener                  → 日志监听器（实时回调）
 | `AwCrashTree` | ✅ 崩溃收集线程安全 |
 | `AwLogInterceptor` | ✅ 拦截器链线程安全，异常隔离 |
 | `AwLogFormatter` | ⚠️ SimpleDateFormat 使用 ThreadLocal 包装，线程安全 |
-| `AwLogFileManager` | ✅ 异步操作使用共享线程池，线程安全 |
+| `AwLogFileManager` | ✅ 异步操作使用可重建的单线程池；日期使用 `java.time` |
 | `AwLogListener` | ⚠️ 监听器回调在日志写入线程执行，需自行保证线程安全 |
 
 ## 兼容性
@@ -437,10 +445,19 @@ A: 不需要。库已通过 `consumer-rules.pro` 自动配置 ProGuard 规则，
 A: 不会。AwFileTree 内部队列最大 1024 条，满时会丢弃最旧日志并输出警告到 Logcat。
 
 **Q: 多线程写日志安全吗？**
-A: 安全。SimpleDateFormat 使用 ThreadLocal 包装，AwLogger.init() 使用 synchronized 保护，文件写入在单线程执行器中串行执行。
+A: 安全。`AwLogFormatter` 内置实现通过 ThreadLocal 使用 `SimpleDateFormat`；`AwFileTree` 写入在单线程执行器中串行；日期与文件管理侧使用 `java.time`；`AwLogger.init` / `flush` / `reset` 使用 `synchronized` 协调。
+
+**Q: 开启 fileLog 但 `fileDir` 为空会怎样？**
+A: `AwLogger.init` 会抛出 `IllegalArgumentException`，需传入非空绝对路径（此前版本会静默不启用文件树）。
+
+**Q: 压缩后的 .gz 日志能搜索吗？**
+A: 可以。`AwLogFileManager.search` 会读取 `log_*.txt` 与 `log_*.txt.gz`。
+
+**Q: `debug` 和 `crashLog` 都开，ERROR 会打两次 Logcat 吗？**
+A: 默认不会：`crashEchoToLogcat` 为 `null` 时在 Debug 构建中等价于关闭 `AwCrashTree` 的 Logcat 回显，由 `AwDebugTree` 负责；未捕获崩溃仍走 `crashHandler` / `Log.e`。
 
 ## 许可证
 
 Apache License 2.0，详见 [LICENSE](LICENSE)。
 
-# Last updated: 2026年 4月 21日
+# Last updated: 2026年 4月 22日

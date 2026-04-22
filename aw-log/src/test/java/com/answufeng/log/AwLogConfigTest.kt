@@ -19,6 +19,8 @@ class AwLogConfigTest {
         assertEquals(Log.VERBOSE, config.minPriority)
         assertEquals(Log.DEBUG, config.fileMinPriority)
         assertEquals(3000L, config.flushIntervalMs)
+        assertFalse(config.rejectLogOnInterceptorFailure)
+        assertNull(config.crashEchoToLogcat)
     }
 
     @Test(expected = IllegalArgumentException::class)

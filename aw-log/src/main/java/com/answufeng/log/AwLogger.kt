@@ -23,6 +23,15 @@ object AwLogger {
     @Volatile
     private var fileDir: String = ""
 
+    @Volatile
+    private var fileLogActive: Boolean = false
+
+    @Volatile
+    private var fileMinPriorityStored: Int = Log.DEBUG
+
+    @Volatile
+    private var rejectLogOnInterceptorFailure: Boolean = false
+
     private val interceptors = CopyOnWriteArrayList<AwLogInterceptor>()
 
     private val listeners = CopyOnWriteArrayList<AwLogListener>()
@@ -38,6 +47,12 @@ object AwLogger {
         synchronized(this) {
             val config = AwLogConfig().apply(block)
 
+            if (config.fileLog) {
+                require(config.fileDir.isNotBlank()) {
+                    "fileDir must not be blank when fileLog is true"
+                }
+            }
+
             if (initialized) {
                 Timber.forest()
                     .filterIsInstance<AwFileTree>()
@@ -49,16 +64,21 @@ object AwLogger {
 
             minPriority = config.minPriority
             fileDir = if (config.fileLog) config.fileDir else ""
+            fileLogActive = config.fileLog && config.fileDir.isNotBlank()
+            fileMinPriorityStored = config.fileMinPriority
+            rejectLogOnInterceptorFailure = config.rejectLogOnInterceptorFailure
             interceptors.clear()
             interceptors.addAll(config.interceptors)
             listeners.clear()
             listeners.addAll(config.listeners)
 
+            AwCrashCoordinator.syncFromConfig(config.crashLog, config.crashHandler)
+
             if (config.debug) {
                 Timber.plant(AwDebugTree())
             }
 
-            if (config.fileLog && config.fileDir.isNotBlank()) {
+            if (fileLogActive) {
                 Timber.plant(
                     AwFileTree(
                         logDir = config.fileDir,
@@ -72,9 +92,8 @@ object AwLogger {
             }
 
             if (config.crashLog) {
-                val crashTree = AwCrashTree(config.crashHandler)
-                crashTree.installCrashHandler()
-                Timber.plant(crashTree)
+                val crashEcho = config.crashEchoToLogcat ?: !config.debug
+                Timber.plant(AwCrashTree(echoToLogcat = crashEcho))
             }
 
             config.extraTrees.forEach { Timber.plant(it) }
@@ -97,20 +116,26 @@ object AwLogger {
                 .filterIsInstance<AwFileTree>()
                 .forEach { it.shutdown() }
             AwLogFileManager.shutdown()
+            AwCrashCoordinator.syncFromConfig(false, null)
             Timber.uprootAll()
             interceptors.clear()
             listeners.clear()
             initialized = false
             minPriority = Log.VERBOSE
             fileDir = ""
+            fileLogActive = false
+            fileMinPriorityStored = Log.DEBUG
+            rejectLogOnInterceptorFailure = false
         }
     }
 
     /** 将文件日志缓冲区刷新到磁盘。通常在 Activity.onDestroy() 中调用。 */
     fun flush() {
-        Timber.forest()
-            .filterIsInstance<AwFileTree>()
-            .forEach { it.flush() }
+        synchronized(this) {
+            Timber.forest()
+                .filterIsInstance<AwFileTree>()
+                .forEach { it.flush() }
+        }
     }
 
     /**
@@ -138,6 +163,15 @@ object AwLogger {
      */
     fun isLoggable(priority: Int): Boolean {
         return Timber.treeCount > 0 && minPriority <= priority
+    }
+
+    /**
+     * 判断指定级别的日志是否会被写入文件（[AwFileTree]）。
+     *
+     * 需同时满足：已启用文件日志、[isLoggable] 为 true，且级别不低于 [AwLogConfig.fileMinPriority]。
+     */
+    fun isFileLoggable(priority: Int): Boolean {
+        return fileLogActive && isLoggable(priority) && priority >= fileMinPriorityStored
     }
 
     /** 获取文件日志目录路径，未启用文件日志时返回空字符串。 */
@@ -193,7 +227,12 @@ object AwLogger {
             return try {
                 interceptors[index].intercept(next)
             } catch (e: Exception) {
-                AwLogInterceptor.LogResult.Accepted(message, tag)
+                Log.w("AwLogger", "Interceptor failed at index $index", e)
+                if (rejectLogOnInterceptorFailure) {
+                    AwLogInterceptor.LogResult.Rejected("interceptor failure: ${e.javaClass.simpleName}")
+                } else {
+                    AwLogInterceptor.LogResult.Accepted(message, tag)
+                }
             }
         }
     }
@@ -216,16 +255,31 @@ object AwLogger {
             val effectiveTag = result.tag ?: tag
             val finalMessage = result.message
             notifyListeners(priority, effectiveTag, finalMessage, t)
-            if (effectiveTag != null) {
-                Timber.tag(effectiveTag)
-            }
+            dispatchToTimber(priority, effectiveTag, finalMessage, t)
+        }
+    }
+
+    /**
+     * 使用 Timber 5 推荐的链式 tag，避免依赖「下一次 Forest 调用」的一次性 tag 语义。
+     */
+    private fun dispatchToTimber(priority: Int, tag: String?, message: String, t: Throwable?) {
+        if (tag != null) {
             when (priority) {
-                Log.VERBOSE -> if (t != null) Timber.v(t, finalMessage) else Timber.v(finalMessage)
-                Log.DEBUG -> if (t != null) Timber.d(t, finalMessage) else Timber.d(finalMessage)
-                Log.INFO -> if (t != null) Timber.i(t, finalMessage) else Timber.i(finalMessage)
-                Log.WARN -> if (t != null) Timber.w(t, finalMessage) else Timber.w(finalMessage)
-                Log.ERROR -> if (t != null) Timber.e(t, finalMessage) else Timber.e(finalMessage)
-                Log.ASSERT -> if (t != null) Timber.wtf(t, finalMessage) else Timber.wtf(finalMessage)
+                Log.VERBOSE -> if (t != null) Timber.tag(tag).v(t, message) else Timber.tag(tag).v(message)
+                Log.DEBUG -> if (t != null) Timber.tag(tag).d(t, message) else Timber.tag(tag).d(message)
+                Log.INFO -> if (t != null) Timber.tag(tag).i(t, message) else Timber.tag(tag).i(message)
+                Log.WARN -> if (t != null) Timber.tag(tag).w(t, message) else Timber.tag(tag).w(message)
+                Log.ERROR -> if (t != null) Timber.tag(tag).e(t, message) else Timber.tag(tag).e(message)
+                Log.ASSERT -> if (t != null) Timber.tag(tag).wtf(t, message) else Timber.tag(tag).wtf(message)
+            }
+        } else {
+            when (priority) {
+                Log.VERBOSE -> if (t != null) Timber.v(t, message) else Timber.v(message)
+                Log.DEBUG -> if (t != null) Timber.d(t, message) else Timber.d(message)
+                Log.INFO -> if (t != null) Timber.i(t, message) else Timber.i(message)
+                Log.WARN -> if (t != null) Timber.w(t, message) else Timber.w(message)
+                Log.ERROR -> if (t != null) Timber.e(t, message) else Timber.e(message)
+                Log.ASSERT -> if (t != null) Timber.wtf(t, message) else Timber.wtf(message)
             }
         }
     }
@@ -235,7 +289,8 @@ object AwLogger {
         for (listener in listeners) {
             try {
                 listener.onLog(priority, tag, message, t)
-            } catch (_: Exception) {
+            } catch (e: Exception) {
+                Log.w("AwLogger", "AwLogListener.onLog failed", e)
             }
         }
     }
@@ -383,6 +438,7 @@ object AwLogger {
      * @param priority 日志级别，默认 [Log.DEBUG]
      */
     fun json(json: String?, tag: String? = null, priority: Int = Log.DEBUG) {
+        if (!shouldLog(priority)) return
         if (json.isNullOrBlank()) {
             logInternal(priority, tag, "Empty/Null JSON")
             return
@@ -439,6 +495,7 @@ object AwLogger {
      * @param priority 日志级别，默认 [Log.DEBUG]
      */
     fun xml(xml: String?, tag: String? = null, priority: Int = Log.DEBUG) {
+        if (!shouldLog(priority)) return
         if (xml.isNullOrBlank()) {
             logInternal(priority, tag, "Empty/Null XML")
             return

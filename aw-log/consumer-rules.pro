@@ -24,6 +24,7 @@
     public static *** isInitialized();
     public static *** setMinPriority(...);
     public static *** isLoggable(...);
+    public static *** isFileLoggable(...);
     public static *** getFileDir();
 }
 -keep class com.answufeng.log.AwLogConfig { *; }

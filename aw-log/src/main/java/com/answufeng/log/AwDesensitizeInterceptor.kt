@@ -1,5 +1,7 @@
 package com.answufeng.log
 
+import android.util.Log
+
 /**
  * 内置脱敏拦截器，预置常见敏感字段规则。
  *
@@ -49,13 +51,18 @@ class AwDesensitizeInterceptor private constructor(
     )
 
     override fun intercept(chain: AwLogInterceptor.Chain): AwLogInterceptor.LogResult {
-        var message = chain.message
-        for (rule in rules) {
-            message = message.replace(rule.pattern) { matchResult ->
-                rule.strategy.mask(matchResult.value)
+        return try {
+            var message = chain.message
+            for (rule in rules) {
+                message = message.replace(rule.pattern) { matchResult ->
+                    rule.strategy.mask(matchResult.value)
+                }
             }
+            chain.proceed(message, chain.tag)
+        } catch (e: Exception) {
+            Log.w("AwDesensitize", "Desensitize failed, using original message", e)
+            chain.proceed()
         }
-        return chain.proceed(message, chain.tag)
     }
 
     companion object {

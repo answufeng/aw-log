@@ -1,5 +1,9 @@
 package com.answufeng.log.demo
 
+import android.content.ClipData
+import android.content.ClipboardManager
+import android.content.Context
+import android.content.Intent
 import android.graphics.Color
 import android.os.Bundle
 import android.text.SpannableString
@@ -8,7 +12,6 @@ import android.text.style.ForegroundColorSpan
 import android.util.Log
 import android.widget.ScrollView
 import android.widget.TextView
-import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import com.answufeng.log.AwDesensitizeInterceptor
 import com.answufeng.log.AwLogFileManager
@@ -16,12 +19,35 @@ import com.answufeng.log.AwLogFormatter
 import com.answufeng.log.AwLogListener
 import com.answufeng.log.AwLogger
 import com.google.android.material.button.MaterialButton
+import com.google.android.material.chip.Chip
+import com.google.android.material.materialswitch.MaterialSwitch
+import com.google.android.material.textfield.TextInputEditText
 import java.io.File
 
 class MainActivity : AppCompatActivity() {
 
     private lateinit var tvLog: TextView
     private lateinit var logScrollView: ScrollView
+
+    private lateinit var switchDebug: MaterialSwitch
+    private lateinit var switchFile: MaterialSwitch
+    private lateinit var switchCrash: MaterialSwitch
+    private lateinit var switchDesensitize: MaterialSwitch
+    private lateinit var switchCompact: MaterialSwitch
+
+    private lateinit var etTag: TextInputEditText
+    private lateinit var etMessage: TextInputEditText
+
+    private lateinit var chipMinVerbose: Chip
+    private lateinit var chipMinDebug: Chip
+    private lateinit var chipMinInfo: Chip
+    private lateinit var chipMinWarn: Chip
+    private lateinit var chipMinError: Chip
+
+    private lateinit var chipSendDebug: Chip
+    private lateinit var chipSendInfo: Chip
+    private lateinit var chipSendWarn: Chip
+    private lateinit var chipSendError: Chip
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -33,71 +59,57 @@ class MainActivity : AppCompatActivity() {
         tvLog = findViewById(R.id.tvLog)
         logScrollView = findViewById(R.id.logScrollView)
 
+        switchDebug = findViewById(R.id.switchDebug)
+        switchFile = findViewById(R.id.switchFile)
+        switchCrash = findViewById(R.id.switchCrash)
+        switchDesensitize = findViewById(R.id.switchDesensitize)
+        switchCompact = findViewById(R.id.switchCompact)
+
+        etTag = findViewById(R.id.etTag)
+        etMessage = findViewById(R.id.etMessage)
+
+        chipMinVerbose = findViewById(R.id.chipMinVerbose)
+        chipMinDebug = findViewById(R.id.chipMinDebug)
+        chipMinInfo = findViewById(R.id.chipMinInfo)
+        chipMinWarn = findViewById(R.id.chipMinWarn)
+        chipMinError = findViewById(R.id.chipMinError)
+
+        chipSendDebug = findViewById(R.id.chipSendDebug)
+        chipSendInfo = findViewById(R.id.chipSendInfo)
+        chipSendWarn = findViewById(R.id.chipSendWarn)
+        chipSendError = findViewById(R.id.chipSendError)
+
+        // Defaults for demo
+        switchDebug.isChecked = true
+        switchFile.isChecked = true
+        switchCrash.isChecked = true
+        switchDesensitize.isChecked = true
+        switchCompact.isChecked = false
+        chipMinVerbose.isChecked = true
+        chipSendDebug.isChecked = true
+
+        findViewById<MaterialButton>(R.id.btnApplyConfig).setOnClickListener { applyConfig() }
         findViewById<MaterialButton>(R.id.btnClearLog).setOnClickListener { clearLog() }
-        findViewById<MaterialButton>(R.id.btnVerbose).setOnClickListener { sendVerboseLog() }
-        findViewById<MaterialButton>(R.id.btnDebug).setOnClickListener { sendDebugLog() }
-        findViewById<MaterialButton>(R.id.btnInfo).setOnClickListener { sendInfoLog() }
-        findViewById<MaterialButton>(R.id.btnWarn).setOnClickListener { sendWarnLog() }
-        findViewById<MaterialButton>(R.id.btnError).setOnClickListener { sendErrorLog() }
-        findViewById<MaterialButton>(R.id.btnWtf).setOnClickListener { sendWtfLog() }
-        findViewById<MaterialButton>(R.id.btnLambda).setOnClickListener { sendLambdaLog() }
-        findViewById<MaterialButton>(R.id.btnTagged).setOnClickListener { sendTaggedLog() }
-        findViewById<MaterialButton>(R.id.btnFormat).setOnClickListener { sendFormatLog() }
-        findViewById<MaterialButton>(R.id.btnThrowableLambda).setOnClickListener { sendThrowableLambdaLog() }
-        findViewById<MaterialButton>(R.id.btnJsonDebug).setOnClickListener { sendJsonLog() }
-        findViewById<MaterialButton>(R.id.btnJsonError).setOnClickListener { sendJsonErrorLog() }
+        findViewById<MaterialButton>(R.id.btnCopyLog).setOnClickListener { copyConsole() }
+        findViewById<MaterialButton>(R.id.btnShareLog).setOnClickListener { shareConsole() }
+        findViewById<MaterialButton>(R.id.btnFlush).setOnClickListener { flushLogs() }
+
+        findViewById<MaterialButton>(R.id.btnSend).setOnClickListener { sendQuickLog() }
+        findViewById<MaterialButton>(R.id.btnSendThrowable).setOnClickListener { sendQuickThrowable() }
+        findViewById<MaterialButton>(R.id.btnJson).setOnClickListener { sendJsonLog() }
         findViewById<MaterialButton>(R.id.btnXml).setOnClickListener { sendXmlLog() }
         findViewById<MaterialButton>(R.id.btnDesensitize).setOnClickListener { testDesensitize() }
-        findViewById<MaterialButton>(R.id.btnLevelFilter).setOnClickListener { testLevelFilter() }
+
         findViewById<MaterialButton>(R.id.btnFileInfo).setOnClickListener { showFileInfo() }
         findViewById<MaterialButton>(R.id.btnCompress).setOnClickListener { compressOldLogs() }
-        findViewById<MaterialButton>(R.id.btnDiskSpace).setOnClickListener { checkDiskSpace() }
-        findViewById<MaterialButton>(R.id.btnSearch).setOnClickListener { searchLogs() }
         findViewById<MaterialButton>(R.id.btnExport).setOnClickListener { exportLogs() }
-        findViewById<MaterialButton>(R.id.btnFlush).setOnClickListener { flushLogs() }
         findViewById<MaterialButton>(R.id.btnClearLogs).setOnClickListener { clearAllLogs() }
+
         findViewById<MaterialButton>(R.id.btnConcurrent).setOnClickListener { testConcurrent() }
-        findViewById<MaterialButton>(R.id.btnDynamicLevel).setOnClickListener { testDynamicLevel() }
-        findViewById<MaterialButton>(R.id.btnCustomFormatter).setOnClickListener { testCustomFormatter() }
+        findViewById<MaterialButton>(R.id.btnCrash).setOnClickListener { triggerCrash() }
 
-        AwLogger.init {
-            debug = true
-            fileLog = true
-            fileDir = cacheDir.absolutePath + "/logs"
-            maxFileSize = 2L * 1024 * 1024
-            maxFileCount = 5
-            crashLog = true
-            addInterceptor(AwDesensitizeInterceptor.create {
-                phone()
-                email()
-                keyValue()
-            })
-            addListener(AwLogListener { priority, tag, message, _ ->
-                val level = when (priority) {
-                    Log.VERBOSE -> "V"
-                    Log.DEBUG -> "D"
-                    Log.INFO -> "I"
-                    Log.WARN -> "W"
-                    Log.ERROR -> "E"
-                    Log.ASSERT -> "A"
-                    else -> "?"
-                }
-                val color = when (priority) {
-                    Log.VERBOSE -> Color.GRAY
-                    Log.DEBUG -> Color.BLUE
-                    Log.INFO -> Color.parseColor("#4CAF50")
-                    Log.WARN -> Color.parseColor("#FF9800")
-                    Log.ERROR -> Color.RED
-                    Log.ASSERT -> Color.parseColor("#9C27B0")
-                    else -> Color.DKGRAY
-                }
-                runOnUiThread {
-                    appendColoredLog("$level/${tag ?: "NoTag"}: $message", color)
-                }
-            })
-        }
-
-        appendColoredLog("日志初始化完成", Color.parseColor("#4CAF50"))
+        // First init
+        applyConfig(initial = true)
     }
 
     override fun onDestroy() {
@@ -122,58 +134,27 @@ class MainActivity : AppCompatActivity() {
         tvLog.text = ""
     }
 
-    private fun sendVerboseLog() {
-        AwLogger.v("这是一条 Verbose 日志")
+    private fun sendQuickLog() {
+        val tag = etTag.text?.toString()?.trim().orEmpty().ifEmpty { null }
+        val message = etMessage.text?.toString()?.trim().orEmpty().ifEmpty { "Hello aw-log @ ${System.currentTimeMillis()}" }
+        when (selectedSendPriority()) {
+            Log.DEBUG -> if (tag != null) AwLogger.d(tag, message) else AwLogger.d(message)
+            Log.INFO -> if (tag != null) AwLogger.i(tag, message) else AwLogger.i(message)
+            Log.WARN -> if (tag != null) AwLogger.w(tag, message) else AwLogger.w(message)
+            Log.ERROR -> if (tag != null) AwLogger.e(tag, message) else AwLogger.e(message)
+            else -> if (tag != null) AwLogger.d(tag, message) else AwLogger.d(message)
+        }
     }
 
-    private fun sendDebugLog() {
-        AwLogger.d("这是一条 Debug 日志")
-    }
-
-    private fun sendInfoLog() {
-        AwLogger.i("这是一条 Info 日志")
-    }
-
-    private fun sendWarnLog() {
-        AwLogger.w("这是一条 Warn 日志")
-    }
-
-    private fun sendErrorLog() {
-        AwLogger.e(RuntimeException("测试错误"), "这是一条 Error 日志")
-    }
-
-    private fun sendWtfLog() {
-        AwLogger.wtf("这是一条 WTF 日志")
-    }
-
-    private fun sendLambdaLog() {
-        AwLogger.d { "延迟计算: ${System.currentTimeMillis()}" }
-    }
-
-    private fun sendTaggedLog() {
-        AwLogger.d("网络", "连接超时: https://example.com")
-        AwLogger.e("API", "请求失败: 503 服务不可用")
-        AwLogger.i("UI", "Activity 创建: ${localClassName}")
-    }
-
-    private fun sendFormatLog() {
-        AwLogger.i("用户登录: userId=%d, name=%s", 123, "张三")
-        AwLogger.d("请求耗时: %dms, 状态码: %d", 256, 200)
-    }
-
-    private fun sendThrowableLambdaLog() {
-        val ex = RuntimeException("网络超时")
-        AwLogger.e(ex, "API") { "请求失败: ${ex.message}" }
+    private fun sendQuickThrowable() {
+        val tag = etTag.text?.toString()?.trim().orEmpty().ifEmpty { "Demo" }
+        val ex = RuntimeException("Demo exception @ ${System.currentTimeMillis()}")
+        AwLogger.e(ex, tag) { "发送一条带异常的日志：${ex.message}" }
     }
 
     private fun sendJsonLog() {
         val json = """{"name":"aw-log","version":"2.0.0","features":["debug","file","crash","interceptor","desensitize"]}"""
         AwLogger.json(json, "Demo")
-    }
-
-    private fun sendJsonErrorLog() {
-        val errorJson = """{"error":"Unauthorized","code":401,"message":"Invalid token"}"""
-        AwLogger.json(errorJson, "API", priority = Log.ERROR)
     }
 
     private fun sendXmlLog() {
@@ -184,16 +165,6 @@ class MainActivity : AppCompatActivity() {
     private fun testDesensitize() {
         AwLogger.i("用户手机号: 13812345678, 邮箱: user@example.com")
         AwLogger.d("登录参数: password=secret123, token=abc123xyz")
-    }
-
-    private fun testLevelFilter() {
-        val oldLevel = AwLogger.setMinPriority(Log.WARN)
-        AwLogger.d("这条 Debug 不会显示")
-        AwLogger.i("这条 Info 不会显示")
-        AwLogger.w("这条 Warn 会显示")
-        AwLogger.e("这条 Error 会显示")
-        AwLogger.setMinPriority(oldLevel)
-        AwLogger.d("级别已恢复，Debug 可以显示了")
     }
 
     private fun showFileInfo() {
@@ -215,27 +186,6 @@ class MainActivity : AppCompatActivity() {
         AwLogFileManager.compressOldLogsAsync(logDir) { count ->
             runOnUiThread {
                 appendLog("压缩了 $count 个旧日志文件 (异步)")
-            }
-        }
-    }
-
-    private fun checkDiskSpace() {
-        val logDir = AwLogger.getFileDir()
-        val available = AwLogFileManager.getAvailableSpace(logDir)
-        val availableMB = available / (1024 * 1024)
-        appendLog("可用磁盘空间: ${availableMB}MB")
-    }
-
-    private fun searchLogs() {
-        val logDir = AwLogger.getFileDir()
-        AwLogFileManager.searchAsync(logDir, "Error") { results ->
-            runOnUiThread {
-                if (results.isEmpty()) {
-                    appendLog("未搜索到包含 'Error' 的日志")
-                } else {
-                    appendLog("搜索到 ${results.size} 条包含 'Error' 的日志:")
-                    results.take(5).forEach { appendLog("  $it") }
-                }
             }
         }
     }
@@ -282,59 +232,119 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private fun testDynamicLevel() {
-        val levels = listOf("VERBOSE" to Log.VERBOSE, "DEBUG" to Log.DEBUG, "INFO" to Log.INFO, "WARN" to Log.WARN, "ERROR" to Log.ERROR)
-        val items = levels.map { it.first }.toTypedArray()
-        AlertDialog.Builder(this)
-            .setTitle("选择最低日志级别")
-            .setItems(items) { _, which ->
-                val (_, level) = levels[which]
-                val oldLevel = AwLogger.setMinPriority(level)
-                appendLog("日志级别已设为: ${items[which]} (之前: ${priorityName(oldLevel)})")
-            }
-            .show()
+    private fun triggerCrash() {
+        appendLog("即将触发崩溃（用于验证 crashLog 写入）。")
+        throw RuntimeException("Demo crash from aw-log demo")
     }
 
-    private fun testCustomFormatter() {
+    private fun applyConfig(initial: Boolean = false) {
+        initLogger(
+            debug = switchDebug.isChecked,
+            fileLog = switchFile.isChecked,
+            crashLog = switchCrash.isChecked,
+            desensitize = switchDesensitize.isChecked,
+            compactFormatter = switchCompact.isChecked,
+            minPriority = selectedMinPriority()
+        )
+        if (initial) {
+            appendColoredLog("aw-log 已初始化：可以开始打点/导出/崩溃测试", Color.parseColor("#34D399"))
+        } else {
+            appendLog("配置已应用：minLevel=${priorityName(selectedMinPriority())}, fileLog=${switchFile.isChecked}, crashLog=${switchCrash.isChecked}")
+        }
+    }
+
+    private fun initLogger(
+        debug: Boolean,
+        fileLog: Boolean,
+        crashLog: Boolean,
+        desensitize: Boolean,
+        compactFormatter: Boolean,
+        minPriority: Int
+    ) {
         AwLogger.init {
-            debug = true
-            fileLog = true
+            this.debug = debug
+            this.fileLog = fileLog
             fileDir = cacheDir.absolutePath + "/logs"
             maxFileSize = 2L * 1024 * 1024
             maxFileCount = 5
-            crashLog = true
-            fileFormatter = AwLogFormatter.compact()
-            addInterceptor(AwDesensitizeInterceptor.create {
-                phone()
-                email()
-                keyValue()
-            })
-            addListener(AwLogListener { priority, tag, message, _ ->
-                val level = when (priority) {
-                    Log.VERBOSE -> "V"
-                    Log.DEBUG -> "D"
-                    Log.INFO -> "I"
-                    Log.WARN -> "W"
-                    Log.ERROR -> "E"
-                    Log.ASSERT -> "A"
-                    else -> "?"
-                }
-                val color = when (priority) {
-                    Log.VERBOSE -> Color.GRAY
-                    Log.DEBUG -> Color.BLUE
-                    Log.INFO -> Color.parseColor("#4CAF50")
-                    Log.WARN -> Color.parseColor("#FF9800")
-                    Log.ERROR -> Color.RED
-                    Log.ASSERT -> Color.parseColor("#9C27B0")
-                    else -> Color.DKGRAY
-                }
-                runOnUiThread {
-                    appendColoredLog("$level/${tag ?: "NoTag"}: $message", color)
-                }
-            })
+            this.crashLog = crashLog
+            if (compactFormatter) {
+                fileFormatter = AwLogFormatter.compact()
+            }
+            if (desensitize) {
+                addInterceptor(AwDesensitizeInterceptor.create {
+                    phone()
+                    email()
+                    keyValue()
+                })
+            }
+            addListener(consoleListener)
         }
-        appendLog("已切换为 compact 格式化器 (HH:mm:ss.SSS)")
-        AwLogger.i("这条日志使用 compact 格式化器写入文件")
+        AwLogger.setMinPriority(minPriority)
+    }
+
+    private val consoleListener = AwLogListener { priority, tag, message, _ ->
+        val level = when (priority) {
+            Log.VERBOSE -> "V"
+            Log.DEBUG -> "D"
+            Log.INFO -> "I"
+            Log.WARN -> "W"
+            Log.ERROR -> "E"
+            Log.ASSERT -> "A"
+            else -> "?"
+        }
+        val color = when (priority) {
+            Log.VERBOSE -> Color.parseColor("#94A3B8")
+            Log.DEBUG -> Color.parseColor("#60A5FA")
+            Log.INFO -> Color.parseColor("#34D399")
+            Log.WARN -> Color.parseColor("#FBBF24")
+            Log.ERROR -> Color.parseColor("#F87171")
+            Log.ASSERT -> Color.parseColor("#C084FC")
+            else -> Color.LTGRAY
+        }
+        runOnUiThread {
+            appendColoredLog("$level/${tag ?: "NoTag"}: $message", color)
+        }
+    }
+
+    private fun selectedMinPriority(): Int = when {
+        chipMinError.isChecked -> Log.ERROR
+        chipMinWarn.isChecked -> Log.WARN
+        chipMinInfo.isChecked -> Log.INFO
+        chipMinDebug.isChecked -> Log.DEBUG
+        else -> Log.VERBOSE
+    }
+
+    private fun selectedSendPriority(): Int = when {
+        chipSendError.isChecked -> Log.ERROR
+        chipSendWarn.isChecked -> Log.WARN
+        chipSendInfo.isChecked -> Log.INFO
+        else -> Log.DEBUG
+    }
+
+    private fun copyConsole() {
+        val text = tvLog.text?.toString().orEmpty().trim()
+        if (text.isEmpty()) {
+            appendLog("控制台为空，暂无可复制内容。")
+            return
+        }
+        val cm = getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+        cm.setPrimaryClip(ClipData.newPlainText("aw-log-console", text))
+        appendLog("已复制到剪贴板（${text.length} chars）")
+    }
+
+    private fun shareConsole() {
+        val text = tvLog.text?.toString().orEmpty().trim()
+        if (text.isEmpty()) {
+            appendLog("控制台为空，暂无可分享内容。")
+            return
+        }
+        val intent = Intent(Intent.ACTION_SEND).apply {
+            type = "text/plain"
+            putExtra(Intent.EXTRA_SUBJECT, "aw-log demo console")
+            putExtra(Intent.EXTRA_TEXT, text)
+        }
+        startActivity(Intent.createChooser(intent, "分享控制台内容"))
     }
 
     private fun priorityName(priority: Int): String = when (priority) {

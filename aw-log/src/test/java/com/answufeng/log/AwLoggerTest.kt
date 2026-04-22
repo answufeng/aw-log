@@ -6,6 +6,7 @@ import org.junit.Assert.*
 import org.junit.Before
 import org.junit.Test
 import timber.log.Timber
+import java.nio.file.Files
 
 class AwLoggerTest {
 
@@ -352,5 +353,54 @@ class AwLoggerTest {
         AwLogger.i("should be filtered")
         AwLogger.e("should pass")
         AwLogger.wtf("should pass")
+    }
+
+    @Test(expected = IllegalArgumentException::class)
+    fun `init rejects fileLog without fileDir`() {
+        AwLogger.init {
+            debug = false
+            fileLog = true
+            fileDir = ""
+            crashLog = false
+        }
+    }
+
+    @Test
+    fun `isFileLoggable respects fileMinPriority`() {
+        val dir = Files.createTempDirectory("aw_log_isfile").toFile()
+        try {
+            AwLogger.init {
+                debug = true
+                fileLog = true
+                fileDir = dir.absolutePath
+                fileMinPriority = Log.WARN
+                crashLog = false
+            }
+            assertFalse(AwLogger.isFileLoggable(Log.DEBUG))
+            assertTrue(AwLogger.isFileLoggable(Log.WARN))
+        } finally {
+            dir.deleteRecursively()
+        }
+    }
+
+    @Test
+    fun `rejectLogOnInterceptorFailure drops log when interceptor throws`() {
+        var listenerMessage: String? = null
+        AwLogger.init {
+            debug = true
+            fileLog = false
+            crashLog = false
+            rejectLogOnInterceptorFailure = true
+            addInterceptor(object : AwLogInterceptor {
+                override fun intercept(chain: AwLogInterceptor.Chain): AwLogInterceptor.LogResult {
+                    error("boom")
+                }
+            })
+            addListener { _, _, message, _ ->
+                listenerMessage = message
+            }
+        }
+        AwLogger.d("secret")
+        assertNull(listenerMessage)
     }
 }
