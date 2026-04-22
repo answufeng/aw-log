@@ -26,9 +26,24 @@
 ## 环境要求
 
 - **minSdk**: 24+
+- **验证环境**: 仓库 **demo** 使用 compileSdk 35 / targetSdk 35
 - **Kotlin**: 2.0+
 - **Android Gradle Plugin**: 8.0+
 - **Timber**: 5.0.1
+
+### 工程品质与 CI
+
+- **CI**：[`.github/workflows/ci.yml`](.github/workflows/ci.yml) — `assembleRelease`、`ktlintCheck`、`lintRelease`、`:demo:assembleRelease`。
+- **本地建议**：`./gradlew :aw-log:assembleRelease :aw-log:ktlintCheck :aw-log:lintRelease :demo:assembleRelease`
+- **演示**：[demo/DEMO_MATRIX.md](demo/DEMO_MATRIX.md)；demo 工具栏 **「演示清单」**。
+
+### 生产环境检查清单
+
+- [ ] **Release** 关闭或抬高文件日志级别；确认 `AwLogConfig` / `minPriority` 符合隐私与磁盘预算。
+- [ ] **脱敏**：为业务自定义字段配置 `AwDesensitizeInterceptor` 或等价规则，避免身份证/手机号等落盘。
+- [ ] **崩溃树**：`AwCrashTree` / `AwCrashCoordinator` 仅安装一次；与第三方崩溃 SDK 协调避免重复 `UncaughtExceptionHandler`。
+- [ ] **磁盘**：日志目录在缓存或应用专属路径；低存储时验证 `AwLogFileManager` 清理策略。
+- [ ] **ProGuard**：库已带 `consumer-rules`；宿主 release 请至少跑一次 **R8 冒烟**（本仓库 demo 已开启 minify）。
 
 ## 引入
 
@@ -217,6 +232,10 @@ override fun onDestroy() {
 // 重置（清除所有 Tree，用于测试或动态切换）
 AwLogger.reset()
 ```
+
+## 演示应用
+
+`demo` 集中展示开关、文件日志、脱敏与崩溃演示（会杀进程）；对照 [demo/DEMO_MATRIX.md](demo/DEMO_MATRIX.md)，**勿在生产照搬全开**。
 
 ## 配置项
 

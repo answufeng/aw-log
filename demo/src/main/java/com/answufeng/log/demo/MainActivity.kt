@@ -10,6 +10,8 @@ import android.text.SpannableString
 import android.text.Spanned
 import android.text.style.ForegroundColorSpan
 import android.util.Log
+import android.view.Menu
+import android.view.MenuItem
 import android.widget.ScrollView
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
@@ -19,6 +21,7 @@ import com.answufeng.log.AwLogFormatter
 import com.answufeng.log.AwLogListener
 import com.answufeng.log.AwLogger
 import com.google.android.material.button.MaterialButton
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.chip.Chip
 import com.google.android.material.materialswitch.MaterialSwitch
 import com.google.android.material.textfield.TextInputEditText
@@ -110,6 +113,23 @@ class MainActivity : AppCompatActivity() {
 
         // First init
         applyConfig(initial = true)
+    }
+
+    override fun onCreateOptionsMenu(menu: Menu): Boolean {
+        menuInflater.inflate(R.menu.demo_main_menu, menu)
+        return true
+    }
+
+    override fun onOptionsItemSelected(item: MenuItem): Boolean = when (item.itemId) {
+        R.id.action_demo_playbook -> {
+            MaterialAlertDialogBuilder(this)
+                .setTitle(R.string.demo_playbook_title)
+                .setMessage(R.string.demo_playbook_message)
+                .setPositiveButton(android.R.string.ok, null)
+                .show()
+            true
+        }
+        else -> super.onOptionsItemSelected(item)
     }
 
     override fun onDestroy() {

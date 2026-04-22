@@ -1,3 +1,5 @@
 <resources>
     <string name="app_name">aw-log Demo</string>
+    <string name="demo_playbook_title">演示清单</string>
+    <string name="demo_playbook_message">索引见 demo/DEMO_MATRIX.md。\n\n覆盖：开关、级别、发送样例、文件管理、并发、崩溃演示（会杀进程）。\n\nRelease 请勿照搬 demo 全开；对照 README「生产环境检查清单」。</string>
 </resources>
