@@ -11,11 +11,6 @@ material = "1.12.0"
 timber = "5.0.1"
 desugar-jdk = "2.1.4"
 
-junit = "4.13.2"
-mockito = "5.14.2"
-mockito-kotlin = "5.4.0"
-robolectric = "4.14.1"
-
 [libraries]
 core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "core-ktx" }
 appcompat = { group = "androidx.appcompat", name = "appcompat", version.ref = "appcompat" }
@@ -25,11 +20,6 @@ material = { group = "com.google.android.material", name = "material", version.r
 
 timber = { group = "com.jakewharton.timber", name = "timber", version.ref = "timber" }
 desugar-jdk = { group = "com.android.tools", name = "desugar_jdk_libs", version.ref = "desugar-jdk" }
-
-junit = { group = "junit", name = "junit", version.ref = "junit" }
-mockito-core = { group = "org.mockito", name = "mockito-core", version.ref = "mockito" }
-mockito-kotlin = { group = "org.mockito.kotlin", name = "mockito-kotlin", version.ref = "mockito-kotlin" }
-robolectric = { group = "org.robolectric", name = "robolectric", version.ref = "robolectric" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

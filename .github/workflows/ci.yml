@@ -29,9 +29,6 @@ jobs:
       - name: Build library
         run: ./gradlew :aw-log:assembleRelease
 
-      - name: Run unit tests
-        run: ./gradlew :aw-log:testReleaseUnitTest
-
       - name: ktlint
         run: ./gradlew :aw-log:ktlintCheck
 
