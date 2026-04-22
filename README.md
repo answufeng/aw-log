@@ -6,6 +6,12 @@
 
 提供 Logcat 调试输出、文件日志持久化、崩溃收集、日志拦截与脱敏、自定义格式化、日志文件管理（压缩/导出/清理/搜索）等能力。
 
+## 文档导读
+
+1. [环境要求](#环境要求) → [生产环境检查清单](#生产环境检查清单) → [快速开始](#快速开始)  
+2. 集成上报：[与业务系统集成（监听、导出、上传边界）](#与业务系统集成监听导出上传边界)  
+3. 演示：[demo/DEMO_MATRIX.md](demo/DEMO_MATRIX.md)（含 **推荐手测**）
+
 ## 特性
 
 - **AwDebugTree** — Logcat 输出，自动 Tag 包含方法名与调用位置（一次栈遍历，零冗余）
@@ -44,6 +50,19 @@
 - [ ] **崩溃树**：`AwCrashTree` / `AwCrashCoordinator` 仅安装一次；与第三方崩溃 SDK 协调避免重复 `UncaughtExceptionHandler`。
 - [ ] **磁盘**：日志目录在缓存或应用专属路径；低存储时验证 `AwLogFileManager` 清理策略。
 - [ ] **ProGuard**：库已带 `consumer-rules`；宿主 release 请至少跑一次 **R8 冒烟**（本仓库 demo 已开启 minify）。
+
+## 与业务系统集成（监听、导出、上传边界）
+
+本库 **不内置** 具体 OSS / HTTP 上报实现（避免绑定网络栈与隐私策略）。推荐组合：
+
+| 需求 | 推荐用法 | 注意 |
+|------|----------|------|
+| 实时旁路 | 实现 `AwLogListener`，在主线程轻量转发或入队后后台上传 | 监听器内 **禁止** 同步网络；勿形成环（监听里再打日志） |
+| 离线打包 | `AwLogFileManager.exportToZipAsync` 或导出目录由业务上传 | ZIP 内可能含 **PII**，上传前走脱敏或加密通道 |
+| 崩溃 | `crashHandler` 或与其他崩溃 SDK 协调 **单一** `UncaughtExceptionHandler` | 见上方生产清单 |
+| 合规 | Release 降低 `fileMinPriority`、缩短保留天数、目录放应用专属路径 | 跨境与审计要求由业务法务定 |
+
+**模板思路**：`AwLogListener` 中 `offer` 到 `Channel` / 队列，由单线程 `Worker` 批量 POST；失败落本地重试计数，超过阈值丢弃并打 **系统** Log 一行即可。
 
 ## 引入
 

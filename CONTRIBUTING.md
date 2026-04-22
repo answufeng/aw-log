@@ -37,3 +37,7 @@
 ./gradlew :aw-log:lintRelease
 ./gradlew :demo:assembleRelease          # 构建 Demo
 ```
+
+## 发版前补充检查（R8）
+
+Timber 与文件树类勿被过度 shrink；发版前 release 打包，核对 `consumer-rules` 是否仍覆盖自定义 Tree。
