@@ -4,19 +4,74 @@
 
 基于 [Timber](https://github.com/JakeWharton/timber) 的 Android 日志库：**Logcat**、**文件落盘**、**崩溃回调**、**拦截链 / 脱敏**、**格式化**、**日志文件压缩 / 导出 / 搜索**。
 
+如果你只想最快接入并打出第一条日志，直接看下面的「5 分钟上手（最小接入）」即可；其它内容都可以后置按需查阅。
+
 ---
 
-## 目录
+## 5 分钟上手（最小接入）
+
+### 1) 添加依赖（JitPack）
+
+```kotlin
+// settings.gradle.kts
+dependencyResolutionManagement {
+    repositories {
+        maven { url = uri("https://jitpack.io") }
+    }
+}
+
+// app/build.gradle.kts
+dependencies {
+    implementation("com.github.answufeng:aw-log:1.0.0")
+}
+```
+
+`implementation` 中的 **版本号与 Git / JitPack 的 tag 一致**（上例为 `1.0.0`）。
+
+### 2) 初始化（Application）
+
+```kotlin
+class MyApp : Application() {
+    override fun onCreate() {
+        super.onCreate()
+        AwLogger.init {
+            debug = BuildConfig.DEBUG
+        }
+    }
+}
+```
+
+### 3) 打第一条日志
+
+```kotlin
+AwLogger.d("Hello aw-log")
+```
+
+---
+
+## 目录（按常见需求跳转）
 
 | 我想… | 跳转 |
 |--------|------|
-| 接入依赖、跑起来 | [引入](#引入) · [快速开始](#快速开始) |
+| 最短时间跑通依赖与日志 | [5 分钟上手（最小接入）](#5-分钟上手最小接入) · [快速开始](#快速开始) |
 | 看能力清单 | [特性](#特性) |
 | 上线前检查 | [生产检查清单](#生产检查清单) · [与业务集成](#与业务系统集成) |
 | 查配置项 | [AwLogConfig 配置表](#awlogconfig-配置表) |
 | 拦截 / 脱敏 / 监听 / 格式化 | [进阶用法](#进阶用法) |
 | 性能、线程、混淆 | [性能与线程](#性能与线程) · [兼容性](#兼容性) |
 | 常见问题 | [FAQ](#faq) |
+
+---
+
+## 环境要求
+
+| 项 | 最低版本 |
+|----|----------|
+| Android minSdk | 24 |
+| Kotlin | 2.0+ |
+| AGP | 8.0+ |
+| Timber | 5.0.1 |
+| Demo compileSdk / targetSdk（验证用） | 35 |
 
 ---
 
@@ -33,8 +88,6 @@
 | **AwLogFileManager** | 压缩、ZIP 导出、清理、按时间删、关键词搜索（含 .gz） |
 | **AwLogListener** | 旁路监听（注意线程，勿在回调里同步网络） |
 | 其它 | JSON/XML 美化（有大小上限）、Lambda 懒求值、`isLoggable` / `isFileLoggable`、DSL 初始化 |
-
-**环境**：minSdk **24+**，Kotlin **2.0+**，AGP **8.0+**，Timber **5.0.1**。Demo 验证：compileSdk / targetSdk **35**。
 
 ---
 
