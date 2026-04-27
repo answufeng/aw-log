@@ -14,7 +14,6 @@ android {
     }
 
     compileOptions {
-        isCoreLibraryDesugaringEnabled = true
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
     }
@@ -47,7 +46,6 @@ ktlint {
 dependencies {
     api(libs.timber)
     implementation(libs.annotation)
-    coreLibraryDesugaring(libs.desugar.jdk)
 }
 
 apply(from = "${rootDir}/gradle/publish.gradle.kts")

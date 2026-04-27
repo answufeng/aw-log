@@ -7,9 +7,7 @@ import java.io.BufferedOutputStream
 import java.io.File
 import java.io.FileInputStream
 import java.io.FileOutputStream
-import java.time.LocalDate
-import java.time.ZoneId
-import java.time.format.DateTimeFormatter
+import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 import java.util.concurrent.ExecutorService
@@ -33,7 +31,9 @@ object AwLogFileManager {
 
     private const val TAG = "AwLogFileManager"
 
-    private val dateFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd", Locale.US)
+    private val dateFormatter = ThreadLocal.withInitial {
+        SimpleDateFormat("yyyy-MM-dd", Locale.US)
+    }
 
     private val executorLock = Any()
 
@@ -78,7 +78,7 @@ object AwLogFileManager {
         val dir = File(logDir)
         if (!dir.exists()) return 0
 
-        val today = LocalDate.now(ZoneId.systemDefault()).format(dateFormatter)
+        val today = dateFormatter.get().format(Date())
         val todayPrefix = "log_$today"
 
         val txtFiles = dir.listFiles { file ->

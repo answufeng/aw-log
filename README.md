@@ -22,11 +22,11 @@ dependencyResolutionManagement {
 
 // app/build.gradle.kts
 dependencies {
-    implementation("com.github.answufeng:aw-log:1.0.1")
+    implementation("com.github.answufeng:aw-log:1.0.2")
 }
 ```
 
-`implementation` 中的 **版本号与 Git / JitPack 的 tag 一致**（上例为 `1.0.0`）。
+`implementation` 中的 **版本号与 Git / JitPack 的 tag 一致**（上例为 `1.0.2`）。
 
 ### 2) 初始化（Application）
 
@@ -103,7 +103,7 @@ dependencyResolutionManagement {
 
 // app/build.gradle.kts
 dependencies {
-    implementation("com.github.answufeng:aw-log:1.0.1")
+    implementation("com.github.answufeng:aw-log:1.0.2")
 }
 ```
 
@@ -325,6 +325,7 @@ AwLogFormatter / AwLogFileManager / AwLogListener
 | 多进程写文件？ | 不支持；仅主进程开文件日志或自协调。 |
 | `fileLog` 且 `fileDir` 空？ | `init { }` 会抛 `IllegalArgumentException`；可用 `init(context){}` 自动目录。 |
 | 队列会 OOM 吗？ | 队列有上限，满则丢最旧 + Logcat 警告。 |
+| AGP 8.5+ 报 “requires core library desugaring”？ | 从 `1.0.2` 起库本身不再要求使用端开启 coreLibraryDesugaring；若你依赖了更旧版本，请在宿主 `:app` 启用 coreLibraryDesugaring。 |
 | ERROR 打两次 Logcat？ | 默认 `crashEchoToLogcat=null` 时与 DebugTree 不重复；见配置表。 |
 | 导出 ZIP 父目录不存在？ | `exportLogs` / `exportLogsAsync` 会 `mkdirs`，失败返回 `null`。 |
 | `clearBefore` 按什么删？ | 按文件 **lastModified**，非严格按文件名日期。 |
