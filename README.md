@@ -22,7 +22,7 @@ dependencyResolutionManagement {
 
 // app/build.gradle.kts
 dependencies {
-    implementation("com.github.answufeng:aw-log:1.0.0")
+    implementation("com.github.answufeng:aw-log:1.0.1")
 }
 ```
 
@@ -103,7 +103,7 @@ dependencyResolutionManagement {
 
 // app/build.gradle.kts
 dependencies {
-    implementation("com.github.answufeng:aw-log:1.0.0")
+    implementation("com.github.answufeng:aw-log:1.0.1")
 }
 ```
 
@@ -366,4 +366,4 @@ Apache License 2.0，见 [LICENSE](LICENSE)。
 
 ---
 
-*文档更新：2026-04-23*
+*文档更新：2026-04-27*
