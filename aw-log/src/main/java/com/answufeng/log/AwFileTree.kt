@@ -13,6 +13,7 @@ import java.util.Locale
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.ScheduledThreadPoolExecutor
 import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.AtomicInteger
 
 /**
  * 文件日志树
@@ -46,6 +47,8 @@ internal class AwFileTree(
     private val formatter: AwLogFormatter = AwLogFormatter.default(),
     private val flushIntervalMs: Long = 3000L
 ) : Timber.Tree() {
+
+    private val rotateIndex = AtomicInteger(0)
 
     private val executor: ScheduledThreadPoolExecutor = ScheduledThreadPoolExecutor(
         1
@@ -185,6 +188,9 @@ internal class AwFileTree(
             pw.flush()
             val stackTrace = sw.toString()
             writer.write(stackTrace)
+            if (!stackTrace.endsWith("\n")) {
+                writer.newLine()
+            }
             currentFileSize += stackTrace.toByteArray(Charsets.UTF_8).size.toLong()
         }
 
@@ -254,8 +260,10 @@ internal class AwFileTree(
     }
 
     private fun rotateFile(file: File) {
-        val timestamp = System.currentTimeMillis()
-        val rotatedName = "${file.nameWithoutExtension}_$timestamp.${file.extension}"
+        val dateFormat = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.US)
+        val timestamp = dateFormat.format(Date())
+        val index = rotateIndex.incrementAndGet()
+        val rotatedName = "${file.nameWithoutExtension}_${timestamp}_$index.${file.extension}"
         val rotatedFile = File(file.parent, rotatedName)
         if (!file.renameTo(rotatedFile)) {
             Log.w(TAG, "Failed to rotate log file: ${file.name}")
