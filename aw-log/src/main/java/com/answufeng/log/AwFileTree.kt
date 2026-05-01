@@ -92,7 +92,7 @@ internal class AwFileTree(
     }
 
     override fun isLoggable(tag: String?, priority: Int): Boolean {
-        return priority >= minPriority
+        return priority >= minPriority && priority >= AwLogger.globalMinPriority()
     }
 
     override fun log(priority: Int, tag: String?, message: String, t: Throwable?) {
@@ -188,10 +188,12 @@ internal class AwFileTree(
             pw.flush()
             val stackTrace = sw.toString()
             writer.write(stackTrace)
+            var traceBytes = stackTrace.toByteArray(Charsets.UTF_8).size.toLong()
             if (!stackTrace.endsWith("\n")) {
                 writer.newLine()
+                traceBytes += 1L
             }
-            currentFileSize += stackTrace.toByteArray(Charsets.UTF_8).size.toLong()
+            currentFileSize += traceBytes
         }
 
         if (priority >= Log.ERROR) {

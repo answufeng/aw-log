@@ -1,6 +1,8 @@
 package com.answufeng.log
 
+import android.content.Context
 import android.util.Log
+import java.io.File
 import timber.log.Timber
 import java.util.concurrent.CopyOnWriteArrayList
 
@@ -15,6 +17,8 @@ import java.util.concurrent.CopyOnWriteArrayList
  * 使用前须调用 [init] 进行初始化，推荐在 `Application.onCreate()` 中调用。
  */
 object AwLogger {
+
+    private const val MAX_JSON_OR_XML_CHARS = 512_000
 
     @Volatile
     private var initialized = false
@@ -45,6 +49,18 @@ object AwLogger {
      *
      * @param block 配置 DSL 块，参见 [AwLogConfig]
      */
+    /**
+     * 使用 [Context] 預設檔案目錄（`context.cacheDir/logs`）初始化；若 DSL 中已指定 [AwLogConfig.fileDir] 則不覆寫。
+     */
+    fun init(context: Context, block: AwLogConfig.() -> Unit = {}) {
+        init {
+            if (fileDir.isBlank()) {
+                fileDir = File(context.applicationContext.cacheDir, "logs").absolutePath
+            }
+            block()
+        }
+    }
+
     fun init(block: AwLogConfig.() -> Unit = {}) {
         synchronized(this) {
             val config = AwLogConfig().apply(block)
@@ -154,6 +170,10 @@ object AwLogger {
         minPriority = priority
         return old
     }
+
+    /** 供 [AwFileTree] 与动态 [setMinPriority] 对齐：直接走 Timber 时文件树也尊重全局门槛。 */
+    @PublishedApi
+    internal fun globalMinPriority(): Int = minPriority
 
     /**
      * 判断指定级别的日志是否会被输出。
@@ -447,12 +467,24 @@ object AwLogger {
         }
         try {
             val trimmed = json.trim()
+            if (trimmed.length > MAX_JSON_OR_XML_CHARS) {
+                logInternal(
+                    priority,
+                    tag,
+                    "JSON too large (${trimmed.length} chars), logging truncated preview only"
+                )
+            }
+            val toParse = if (trimmed.length > MAX_JSON_OR_XML_CHARS) {
+                trimmed.take(MAX_JSON_OR_XML_CHARS)
+            } else {
+                trimmed
+            }
             val formatted = when {
                 trimmed.startsWith("{") -> {
-                    org.json.JSONObject(trimmed).toString(2)
+                    org.json.JSONObject(toParse).toString(2)
                 }
                 trimmed.startsWith("[") -> {
-                    org.json.JSONArray(trimmed).toString(2)
+                    org.json.JSONArray(toParse).toString(2)
                 }
                 else -> json
             }
@@ -504,7 +536,19 @@ object AwLogger {
         }
         try {
             val trimmed = xml.trim()
-            val formatted = formatXml(trimmed)
+            if (trimmed.length > MAX_JSON_OR_XML_CHARS) {
+                logInternal(
+                    priority,
+                    tag,
+                    "XML too large (${trimmed.length} chars), logging truncated preview only"
+                )
+            }
+            val toParse = if (trimmed.length > MAX_JSON_OR_XML_CHARS) {
+                trimmed.take(MAX_JSON_OR_XML_CHARS)
+            } else {
+                trimmed
+            }
+            val formatted = formatXml(toParse)
             val lines = formatted.split("\n")
             val sb = StringBuilder()
             sb.appendLine("┌────────────────────────────────────")
