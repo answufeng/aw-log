@@ -136,12 +136,12 @@ class MainActivity : AppCompatActivity() {
 
     private fun appendLog(msg: String, color: Int? = null) {
         if (color != null) {
-            val text = msg + \n
+            val text = "$msg\n"
             val spannable = SpannableString(text)
             spannable.setSpan(ForegroundColorSpan(color), 0, text.length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
             tvLog.append(spannable)
         } else {
-            tvLog.append(msg + \n)
+            tvLog.append("$msg\n")
         }
         logScrollView.post { logScrollView.fullScroll(ScrollView.FOCUS_DOWN) }
     }
@@ -282,10 +282,8 @@ class MainActivity : AppCompatActivity() {
         val files = AwLogFileManager.getLogFiles(logDir)
         val summary = "${files.size} file(s), ${size / 1024}KB total"
         if (files.isEmpty()) { status(summary); return }
-        val detail = files.take(5).joinToString("
-") { "  ${it.name} (${it.length() / 1024}KB)" }
-        val extra = if (files.size > 5) "
-  ... and ${files.size - 5} more" else ""
+        val detail = files.take(5).joinToString("\n") { "  ${it.name} (${it.length() / 1024}KB)" }
+        val extra = if (files.size > 5) "\n  ... and ${files.size - 5} more" else ""
         appendLog("// $summary\n$detail$extra")
         status(summary)
     }

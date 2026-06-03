@@ -20,11 +20,11 @@ dependencyResolutionManagement {
 
 // app/build.gradle.kts
 dependencies {
-    implementation("com.github.answufeng:aw-log:1.0.3")
+    implementation("com.github.answufeng:aw-log:1.0.4")
 }
 ```
 
-`implementation` 中的 **版本号与 Git / JitPack 的 tag 一致**（上例为 `1.0.3`）。
+`implementation` 中的 **版本号与 Git / JitPack 的 tag 一致**（上例为 `1.0.4`）。
 
 ### 2) 初始化（Application）
 

@@ -28,4 +28,8 @@ dependencyResolutionManagement {
 rootProject.name = "aw-log"
 
 include(":aw-log")
-include(":demo")
+
+val isJitPack = System.getenv("JITPACK") != null
+if (!isJitPack) {
+    include(":demo")
+}

@@ -9,7 +9,9 @@ extensions.configure<org.gradle.api.publish.PublishingExtension> {
 
             groupId = "com.github.answufeng"
             artifactId = "aw-log"
-            version = property("VERSION_NAME")?.toString() ?: "1.0.0"
+            version = property("version")?.toString()?.takeIf { it != "unspecified" }
+                ?: property("VERSION_NAME")?.toString()
+                ?: "1.0.0"
 
             pom {
                 name.set("aw-log")
