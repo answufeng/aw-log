@@ -26,6 +26,8 @@ import java.util.concurrent.atomic.AtomicInteger
  * - 低磁盘空间检测（低于 10MB 时跳过写入）
  * - 定期清理超出数量限制的旧文件
  *
+ * - 队列保护：超过 [queueSize] 条等待写入时丢弃最旧日志并每 100 次告警一次
+ *
  * 线程模型：所有文件写入操作在单线程 ScheduledThreadPoolExecutor 中串行执行，
  * [flush] 和 [shutdown] 通过 CountDownLatch/awaitTermination 阻塞等待完成。
  *
@@ -45,7 +47,9 @@ internal class AwFileTree(
     private val maxFileCount: Int = 10,
     private val minPriority: Int = Log.DEBUG,
     private val formatter: AwLogFormatter = AwLogFormatter.default(),
-    private val flushIntervalMs: Long = 3000L
+    private val flushIntervalMs: Long = 3000L,
+    private val queueSize: Int = 1024,
+    private val maxFileAgeDays: Long = 0L
 ) : Timber.Tree() {
 
     private val rotateIndex = AtomicInteger(0)
@@ -97,8 +101,8 @@ internal class AwFileTree(
 
     override fun log(priority: Int, tag: String?, message: String, t: Throwable?) {
         if (shutdown) return
-        val queueSize = executor.queue.size
-        if (queueSize >= MAX_QUEUE_SIZE) {
+        val qsize = executor.queue.size
+        if (qsize >= queueSize) {
             droppedCount++
             if (droppedCount % 100L == 1L) {
                 Log.w(TAG, "Log queue full ($queueSize), dropped $droppedCount messages total")
@@ -273,15 +277,31 @@ internal class AwFileTree(
     }
 
     private fun cleanOldFiles(dir: File) {
-        val logFiles = dir.listFiles { f -> f.isFile && f.name.startsWith("log_") }
+        val logFiles = dir.listFiles { f -> f.isFile && f.name.startsWith("log_") && f.name.endsWith(".txt") }
             ?.sortedBy { it.lastModified() }
             ?: return
 
-        if (logFiles.size > maxFileCount) {
-            val toDelete = logFiles.size - maxFileCount
-            logFiles.take(toDelete).forEach { f ->
+        val deletedNames = mutableSetOf<String>()
+
+        // 按保留天数清理
+        if (maxFileAgeDays > 0L) {
+            val cutoff = System.currentTimeMillis() - maxFileAgeDays * 24L * 60L * 60L * 1000L
+            logFiles.filter { it.lastModified() < cutoff }.forEach { f ->
+                if (f.delete()) {
+                    deletedNames.add(f.name)
+                } else {
+                    Log.w(TAG, "Failed to delete age-expired log file: {f.name}")
+                }
+            }
+        }
+
+        // 按数量清理（排除已按天数删除的文件）
+        val remaining = logFiles.filter { it.name !in deletedNames }
+        if (remaining.size > maxFileCount) {
+            val toDelete = remaining.size - maxFileCount
+            remaining.take(toDelete).forEach { f ->
                 if (!f.delete()) {
-                    Log.w(TAG, "Failed to delete old log file: ${f.name}")
+                    Log.w(TAG, "Failed to delete old log file: {f.name}")
                 }
             }
         }

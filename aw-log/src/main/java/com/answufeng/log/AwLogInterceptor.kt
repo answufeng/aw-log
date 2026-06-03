@@ -63,9 +63,10 @@ interface AwLogInterceptor {
          *
          * @param message 修改后的消息，默认为当前消息
          * @param tag 修改后的标签，默认为当前标签
+         * @param throwable 修改后的异常，默认为当前异常。设为 null 可移除异常信息，用于异常消息脱敏
          * @return 下一个拦截器的处理结果
          */
-        fun proceed(message: String = this.message, tag: String? = this.tag): LogResult
+        fun proceed(message: String = this.message, tag: String? = this.tag, throwable: Throwable? = this.throwable): LogResult
     }
 
     /**

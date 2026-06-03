@@ -24,6 +24,8 @@ import timber.log.Timber
  *         phone()
  *         email()
  *     })
+ *     fileQueueSize = 2048
+ *     maxFileAgeDays = 7
  * }
  * ```
  */
@@ -104,6 +106,20 @@ class AwLogConfig {
 
     /** 文件日志格式化器，默认使用 [AwLogFormatter.default]。 */
     var fileFormatter: AwLogFormatter = AwLogFormatter.default()
+
+    /** 文件日志写入队列最大容量，超出后丢弃最旧日志，默认 1024。 */
+    var fileQueueSize: Int = 1024
+        set(value) {
+            require(value > 0) { "fileQueueSize must be > 0, got " }
+            field = value
+        }
+
+    /** 日志文件保留天数（按最后修改时间），0 表示不限制。超出天数的最旧文件会被自动清理。 */
+    var maxFileAgeDays: Long = 0L
+        set(value) {
+            require(value >= 0) { "maxFileAgeDays must be >= 0, got " }
+            field = value
+        }
 
     internal val extraTrees = mutableListOf<Timber.Tree>()
     internal val interceptors = mutableListOf<AwLogInterceptor>()

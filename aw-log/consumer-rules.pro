@@ -67,21 +67,12 @@
 # File Manager
 # ===========================================================
 -keep class com.answufeng.log.AwLogFileManager { public *; }
--keep class com.answufeng.log.AwLogFileManager$Companion { public *; }
-
-# ===========================================================
-# Internal Trees（通过 Timber 间接使用）
-# ===========================================================
--keep class com.answufeng.log.AwDebugTree { *; }
--keep class com.answufeng.log.AwFileTree { *; }
--keep class com.answufeng.log.AwCrashTree { *; }
-
 # ===========================================================
 # Kotlin 元数据
 # ===========================================================
 -keepattributes *Annotation*, Signature, EnclosingMethod, InnerClasses
 -keep class kotlin.Metadata { *; }
--keep class kotlin.jvm.** { *; }
+-keep class kotlin.jvm.internal.** { *; }
 -keepclassmembers class * {
     @kotlin.Metadata *;
 }

@@ -5,6 +5,11 @@ import android.util.Log
 /**
  * 进程级未捕获异常分发：只安装一次 [Thread.setDefaultUncaughtExceptionHandler]，
  * 通过 [syncFromConfig] 开关与更新回调，避免重复 init 时 handler 嵌套。
+ *
+ * 注意：与第三方崩溃 SDK（如 Crashlytics、Bugly 等）共存时，aw-log 会转发
+ * 至先前安装的 handler，但反复开关可能导致第三方 handler 丢失。建议
+ * 项目中只保留一套 UncaughtExceptionHandler 主导逻辑，或将第三方 SDK
+ * 的初始化放在 aw-log 之后。
  */
 internal object AwCrashCoordinator {
 

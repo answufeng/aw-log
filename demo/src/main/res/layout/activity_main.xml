@@ -8,280 +8,69 @@
 
     <com.google.android.material.appbar.AppBarLayout
         android:layout_width="match_parent"
-        android:layout_height="wrap_content">
+        android:layout_height="wrap_content"
+        android:background="@color/surface">
 
         <com.google.android.material.appbar.MaterialToolbar
             android:id="@+id/toolbar"
             android:layout_width="match_parent"
             android:layout_height="?attr/actionBarSize"
-            app:title="aw-log 控制台"
-            app:subtitle="文件日志 · 脱敏拦截 · 崩溃收集 · 导出分析" />
+            app:title="aw-log Demo" />
     </com.google.android.material.appbar.AppBarLayout>
 
     <androidx.core.widget.NestedScrollView
         android:layout_width="match_parent"
         android:layout_height="match_parent"
+        android:padding="12dp"
         app:layout_behavior="@string/appbar_scrolling_view_behavior">
 
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
-            android:padding="16dp">
+            android:clipToPadding="false">
 
+            <!-- ============ SECTION: Quick Log ============ -->
             <com.google.android.material.card.MaterialCardView
-                style="@style/MaterialCardView.AwLog"
+                style="@style/CardSection"
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content">
-
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="12dp">
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:orientation="vertical"
-                    android:padding="16dp">
-
+                    android:orientation="vertical">
                     <TextView
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:text="运行配置"
-                        style="@style/Text.AwLog.SectionTitle" />
-
-                    <TextView
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="4dp"
-                        android:text="开关配置会重新初始化 aw-log（用于演示不同组合）。"
-                        style="@style/Text.AwLog.SectionSubtitle" />
-
+                        android:text="Quick Send"
+                        style="@style/SectionTitle" />
                     <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="12dp"
-                        android:orientation="vertical">
-
-                        <com.google.android.material.materialswitch.MaterialSwitch
-                            android:id="@+id/switchDebug"
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:text="Debug 输出（Logcat + 控制台）" />
-
-                        <com.google.android.material.materialswitch.MaterialSwitch
-                            android:id="@+id/switchFile"
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:text="写入文件（滚动 + 压缩 + 导出）" />
-
-                        <com.google.android.material.materialswitch.MaterialSwitch
-                            android:id="@+id/switchCrash"
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:text="崩溃收集（UncaughtException）" />
-
-                        <com.google.android.material.materialswitch.MaterialSwitch
-                            android:id="@+id/switchDesensitize"
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:text="脱敏拦截（手机号/邮箱/kv）" />
-
-                        <com.google.android.material.materialswitch.MaterialSwitch
-                            android:id="@+id/switchCompact"
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:text="文件日志：Compact 格式（HH:mm:ss.SSS）" />
-                    </LinearLayout>
-
-                    <TextView
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="12dp"
-                        android:text="最低输出级别"
-                        style="@style/Text.AwLog.SectionSubtitle" />
-
-                    <com.google.android.material.chip.ChipGroup
-                        android:id="@+id/chipGroupMinLevel"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="8dp"
-                        app:singleSelection="true"
-                        app:selectionRequired="true">
-
-                        <com.google.android.material.chip.Chip
-                            android:id="@+id/chipMinVerbose"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="VERBOSE" />
-
-                        <com.google.android.material.chip.Chip
-                            android:id="@+id/chipMinDebug"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="DEBUG" />
-
-                        <com.google.android.material.chip.Chip
-                            android:id="@+id/chipMinInfo"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="INFO" />
-
-                        <com.google.android.material.chip.Chip
-                            android:id="@+id/chipMinWarn"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="WARN" />
-
-                        <com.google.android.material.chip.Chip
-                            android:id="@+id/chipMinError"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="ERROR" />
-                    </com.google.android.material.chip.ChipGroup>
-
-                    <com.google.android.material.button.MaterialButton
-                        android:id="@+id/btnApplyConfig"
-                        style="@style/MaterialButton.AwLog.Filled"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="12dp"
-                        android:text="应用配置" />
-                </LinearLayout>
-            </com.google.android.material.card.MaterialCardView>
-
-            <com.google.android.material.card.MaterialCardView
-                style="@style/MaterialCardView.AwLog"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="12dp">
-
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="vertical"
-                    android:padding="16dp">
-
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:gravity="center_vertical"
                         android:orientation="horizontal">
-
-                        <TextView
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_weight="1"
-                            android:text="实时控制台"
-                            style="@style/Text.AwLog.SectionTitle" />
-
-                        <com.google.android.material.button.MaterialButton
-                            android:id="@+id/btnCopyLog"
-                            style="@style/MaterialButton.AwLog.Outlined"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="复制" />
-
-                        <com.google.android.material.button.MaterialButton
-                            android:id="@+id/btnShareLog"
-                            style="@style/MaterialButton.AwLog.Outlined"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_marginStart="8dp"
-                            android:text="分享" />
-                    </LinearLayout>
-
-                    <TextView
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="4dp"
-                        android:text="用于演示 AwLogListener 的实时回调（颜色区分级别）。"
-                        style="@style/Text.AwLog.SectionSubtitle" />
-
-                    <ScrollView
-                        android:id="@+id/logScrollView"
-                        android:layout_width="match_parent"
-                        android:layout_height="220dp"
-                        android:layout_marginTop="12dp"
-                        android:background="@color/log_background"
-                        android:padding="12dp">
-
-                        <TextView
-                            android:id="@+id/tvLog"
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            style="@style/Text.AwLog.Log"
-                            android:text="" />
-                    </ScrollView>
-
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="12dp"
-                        android:orientation="horizontal">
-
-                        <com.google.android.material.button.MaterialButton
-                            android:id="@+id/btnClearLog"
-                            style="@style/MaterialButton.AwLog.Outlined"
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_weight="1"
-                            android:text="清空控制台" />
-
-                        <com.google.android.material.button.MaterialButton
-                            android:id="@+id/btnFlush"
-                            style="@style/MaterialButton.AwLog.Outlined"
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_marginStart="8dp"
-                            android:layout_weight="1"
-                            android:text="Flush 到磁盘" />
-                    </LinearLayout>
-                </LinearLayout>
-            </com.google.android.material.card.MaterialCardView>
-
-            <com.google.android.material.card.MaterialCardView
-                style="@style/MaterialCardView.AwLog"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="12dp">
-
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="vertical"
-                    android:padding="16dp">
-
-                    <TextView
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:text="快速打点"
-                        style="@style/Text.AwLog.SectionTitle" />
-
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="12dp"
-                        android:orientation="horizontal">
-
                         <com.google.android.material.textfield.TextInputLayout
                             android:id="@+id/tilTag"
                             android:layout_width="0dp"
                             android:layout_height="wrap_content"
                             android:layout_weight="1"
-                            android:hint="Tag (可选)">
-
+                            android:layout_marginEnd="8dp"
+                            android:hint="Tag"
+                            style="@style/Widget.Material3.TextInputLayout.OutlinedBox.Dense">
                             <com.google.android.material.textfield.TextInputEditText
                                 android:id="@+id/etTag"
                                 android:layout_width="match_parent"
                                 android:layout_height="wrap_content"
                                 android:singleLine="true" />
                         </com.google.android.material.textfield.TextInputLayout>
-
                         <com.google.android.material.textfield.TextInputLayout
                             android:id="@+id/tilMessage"
                             android:layout_width="0dp"
                             android:layout_height="wrap_content"
-                            android:layout_marginStart="12dp"
                             android:layout_weight="2"
-                            android:hint="Message">
-
+                            android:hint="Message"
+                            style="@style/Widget.Material3.TextInputLayout.OutlinedBox.Dense">
                             <com.google.android.material.textfield.TextInputEditText
                                 android:id="@+id/etMessage"
                                 android:layout_width="match_parent"
@@ -289,211 +78,232 @@
                                 android:singleLine="true" />
                         </com.google.android.material.textfield.TextInputLayout>
                     </LinearLayout>
-
-                    <com.google.android.material.chip.ChipGroup
-                        android:id="@+id/chipGroupSendLevel"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="12dp"
-                        app:singleSelection="true"
-                        app:selectionRequired="true">
-
-                        <com.google.android.material.chip.Chip
-                            android:id="@+id/chipSendDebug"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="DEBUG" />
-
-                        <com.google.android.material.chip.Chip
-                            android:id="@+id/chipSendInfo"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="INFO" />
-
-                        <com.google.android.material.chip.Chip
-                            android:id="@+id/chipSendWarn"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="WARN" />
-
-                        <com.google.android.material.chip.Chip
-                            android:id="@+id/chipSendError"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="ERROR" />
-                    </com.google.android.material.chip.ChipGroup>
-
                     <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="8dp"
+                        android:gravity="center_vertical"
                         android:orientation="horizontal">
-
+                        <com.google.android.material.chip.ChipGroup
+                            android:id="@+id/chipGroupSendLevel"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            app:singleSelection="true"
+                            app:selectionRequired="true"
+                            app:chipSpacingHorizontal="4dp">
+                            <com.google.android.material.chip.Chip android:id="@+id/chipSendDebug" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="DEBUG" />
+                            <com.google.android.material.chip.Chip android:id="@+id/chipSendInfo" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="INFO" />
+                            <com.google.android.material.chip.Chip android:id="@+id/chipSendWarn" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="WARN" />
+                            <com.google.android.material.chip.Chip android:id="@+id/chipSendError" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="ERROR" />
+                        </com.google.android.material.chip.ChipGroup>
                         <com.google.android.material.button.MaterialButton
                             android:id="@+id/btnSend"
-                            style="@style/MaterialButton.AwLog.Filled"
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_weight="1"
-                            android:text="发送日志" />
-
-                        <com.google.android.material.button.MaterialButton
-                            android:id="@+id/btnSendThrowable"
-                            style="@style/MaterialButton.AwLog.Outlined"
-                            android:layout_width="0dp"
+                            style="@style/Widget.Button.Compact.Filled"
+                            android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:layout_marginStart="8dp"
-                            android:layout_weight="1"
-                            android:text="带异常" />
+                            android:text="Send" />
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/btnSendThrowable"
+                            style="@style/Widget.Button.Compact"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="+ Exception" />
                     </LinearLayout>
-
                     <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_marginTop="8dp"
+                        android:layout_marginTop="6dp"
                         android:orientation="horizontal">
-
                         <com.google.android.material.button.MaterialButton
                             android:id="@+id/btnJson"
-                            style="@style/MaterialButton.AwLog.Outlined"
+                            style="@style/Widget.Button.Compact"
                             android:layout_width="0dp"
                             android:layout_height="wrap_content"
                             android:layout_weight="1"
                             android:text="JSON" />
-
                         <com.google.android.material.button.MaterialButton
                             android:id="@+id/btnXml"
-                            style="@style/MaterialButton.AwLog.Outlined"
+                            style="@style/Widget.Button.Compact"
                             android:layout_width="0dp"
                             android:layout_height="wrap_content"
-                            android:layout_marginStart="8dp"
                             android:layout_weight="1"
                             android:text="XML" />
-
                         <com.google.android.material.button.MaterialButton
                             android:id="@+id/btnDesensitize"
-                            style="@style/MaterialButton.AwLog.Outlined"
+                            style="@style/Widget.Button.Compact"
                             android:layout_width="0dp"
                             android:layout_height="wrap_content"
-                            android:layout_marginStart="8dp"
                             android:layout_weight="1"
-                            android:text="脱敏样例" />
+                            android:text="Desensitize Sample" />
                     </LinearLayout>
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
 
+            <!-- ============ SECTION: Console ============ -->
             <com.google.android.material.card.MaterialCardView
-                style="@style/MaterialCardView.AwLog"
+                style="@style/CardSection"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="12dp">
-
+                android:layout_marginBottom="12dp">
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:orientation="vertical"
-                    android:padding="16dp">
-
-                    <TextView
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:text="文件与导出"
-                        style="@style/Text.AwLog.SectionTitle" />
-
+                    android:orientation="vertical">
                     <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_marginTop="12dp"
+                        android:gravity="center_vertical"
                         android:orientation="horizontal">
-
-                        <com.google.android.material.button.MaterialButton
-                            android:id="@+id/btnFileInfo"
-                            style="@style/MaterialButton.AwLog.Outlined"
+                        <TextView
                             android:layout_width="0dp"
                             android:layout_height="wrap_content"
                             android:layout_weight="1"
-                            android:text="文件信息" />
-
+                            android:text="Console"
+                            style="@style/SectionTitle" />
                         <com.google.android.material.button.MaterialButton
-                            android:id="@+id/btnCompress"
-                            style="@style/MaterialButton.AwLog.Outlined"
-                            android:layout_width="0dp"
+                            android:id="@+id/btnCopyLog"
+                            style="@style/Widget.Button.Compact"
+                            android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:layout_marginStart="8dp"
-                            android:layout_weight="1"
-                            android:text="压缩旧文件" />
+                            android:text="Copy" />
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/btnShareLog"
+                            style="@style/Widget.Button.Compact"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Share" />
                     </LinearLayout>
+                    <ScrollView
+                        android:id="@+id/logScrollView"
+                        android:layout_width="match_parent"
+                        android:layout_height="200dp"
+                        android:layout_marginTop="8dp"
+                        android:background="@color/console_bg"
+                        android:padding="10dp"
+                        android:scrollbars="vertical">
+                        <TextView
+                            android:id="@+id/tvLog"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            style="@style/ConsoleText"
+                            android:text="// aw-log console output will appear here" />
+                    </ScrollView>
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
 
+            <!-- ============ SECTION: Config ============ -->
+            <com.google.android.material.card.MaterialCardView
+                style="@style/CardSection"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="12dp">
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical">
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="Configuration"
+                        style="@style/SectionTitle" />
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        android:orientation="vertical">
+                        <com.google.android.material.materialswitch.MaterialSwitch android:id="@+id/switchDebug" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="Logcat (DebugTree)" />
+                        <com.google.android.material.materialswitch.MaterialSwitch android:id="@+id/switchFile" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="File Logging" />
+                        <com.google.android.material.materialswitch.MaterialSwitch android:id="@+id/switchCrash" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="Crash Handler" />
+                        <com.google.android.material.materialswitch.MaterialSwitch android:id="@+id/switchDesensitize" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="Desensitization" />
+                        <com.google.android.material.materialswitch.MaterialSwitch android:id="@+id/switchCompact" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="Compact Format" />
+                    </LinearLayout>
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="10dp"
+                        android:text="Min Priority"
+                        style="@style/SectionSubtitle" />
+                    <com.google.android.material.chip.ChipGroup
+                        android:id="@+id/chipGroupMinLevel"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="4dp"
+                        app:singleSelection="true"
+                        app:selectionRequired="true"
+                        app:chipSpacingHorizontal="4dp">
+                        <com.google.android.material.chip.Chip android:id="@+id/chipMinVerbose" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="VERBOSE" />
+                        <com.google.android.material.chip.Chip android:id="@+id/chipMinDebug" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="DEBUG" />
+                        <com.google.android.material.chip.Chip android:id="@+id/chipMinInfo" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="INFO" />
+                        <com.google.android.material.chip.Chip android:id="@+id/chipMinWarn" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="WARN" />
+                        <com.google.android.material.chip.Chip android:id="@+id/chipMinError" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="ERROR" />
+                    </com.google.android.material.chip.ChipGroup>
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btnApplyConfig"
+                        style="@style/Widget.Button.Compact.Filled"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="10dp"
+                        android:text="Apply Config" />
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            <!-- ============ SECTION: File Management ============ -->
+            <com.google.android.material.card.MaterialCardView
+                style="@style/CardSection"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="12dp">
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical">
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="Log Files"
+                        style="@style/SectionTitle" />
                     <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="8dp"
                         android:orientation="horizontal">
-
-                        <com.google.android.material.button.MaterialButton
-                            android:id="@+id/btnExport"
-                            style="@style/MaterialButton.AwLog.Filled"
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_weight="1"
-                            android:text="导出 ZIP" />
-
-                        <com.google.android.material.button.MaterialButton
-                            android:id="@+id/btnClearLogs"
-                            style="@style/MaterialButton.AwLog.Outlined"
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_marginStart="8dp"
-                            android:layout_weight="1"
-                            android:text="清除文件" />
+                        <com.google.android.material.button.MaterialButton android:id="@+id/btnFileInfo" style="@style/Widget.Button.Compact" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="Info" />
+                        <com.google.android.material.button.MaterialButton android:id="@+id/btnCompress" style="@style/Widget.Button.Compact" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="Compress" />
+                        <com.google.android.material.button.MaterialButton android:id="@+id/btnExport" style="@style/Widget.Button.Compact" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="Export ZIP" />
+                        <com.google.android.material.button.MaterialButton android:id="@+id/btnClearLogs" style="@style/Widget.Button.Compact" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="Clear" />
                     </LinearLayout>
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
 
+            <!-- ============ SECTION: Demo ============ -->
             <com.google.android.material.card.MaterialCardView
-                style="@style/MaterialCardView.AwLog"
+                style="@style/CardSection"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="12dp"
-                android:layout_marginBottom="16dp">
-
+                android:layout_marginBottom="12dp">
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:orientation="vertical"
-                    android:padding="16dp">
-
+                    android:orientation="vertical">
                     <TextView
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:text="压力与崩溃演示"
-                        style="@style/Text.AwLog.SectionTitle" />
-
+                        android:text="Stress & Crash"
+                        style="@style/SectionTitle" />
                     <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_marginTop="12dp"
+                        android:layout_marginTop="8dp"
                         android:orientation="horizontal">
-
-                        <com.google.android.material.button.MaterialButton
-                            android:id="@+id/btnConcurrent"
-                            style="@style/MaterialButton.AwLog.Outlined"
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_weight="1"
-                            android:text="并发写入" />
-
-                        <com.google.android.material.button.MaterialButton
-                            android:id="@+id/btnCrash"
-                            style="@style/MaterialButton.AwLog.Filled"
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_marginStart="8dp"
-                            android:layout_weight="1"
-                            android:text="触发崩溃" />
+                        <com.google.android.material.button.MaterialButton android:id="@+id/btnConcurrent" style="@style/Widget.Button.Compact" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="Concurrent Write" />
+                        <com.google.android.material.button.MaterialButton android:id="@+id/btnFlush" style="@style/Widget.Button.Compact" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="Flush to Disk" />
+                        <com.google.android.material.button.MaterialButton android:id="@+id/btnCrash" style="@style/Widget.Button.Compact.Filled" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="Trigger Crash" />
                     </LinearLayout>
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
+
         </LinearLayout>
     </androidx.core.widget.NestedScrollView>
 </androidx.coordinatorlayout.widget.CoordinatorLayout>

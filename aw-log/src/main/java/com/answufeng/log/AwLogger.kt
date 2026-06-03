@@ -104,7 +104,9 @@ object AwLogger {
                         maxFileCount = config.maxFileCount,
                         minPriority = config.fileMinPriority,
                         formatter = config.fileFormatter,
-                        flushIntervalMs = config.flushIntervalMs
+                        flushIntervalMs = config.flushIntervalMs,
+                        queueSize = config.fileQueueSize,
+                        maxFileAgeDays = config.maxFileAgeDays
                     )
                 )
             }
@@ -241,11 +243,11 @@ object AwLogger {
         override val throwable: Throwable?
     ) : AwLogInterceptor.Chain {
 
-        override fun proceed(message: String, tag: String?): AwLogInterceptor.LogResult {
+        override fun proceed(message: String, tag: String?, throwable: Throwable?): AwLogInterceptor.LogResult {
             if (index >= interceptors.size) {
                 return AwLogInterceptor.LogResult.Accepted(message, tag)
             }
-            val next = RealInterceptorChain(interceptors, index + 1, priority, tag, message, throwable)
+            val next = RealInterceptorChain(interceptors, index + 1, priority, tag, message, throwable ?: this.throwable)
             return try {
                 interceptors[index].intercept(next)
             } catch (e: Exception) {
@@ -430,6 +432,18 @@ object AwLogger {
 
     inline fun e(t: Throwable?, tag: String, crossinline message: () -> String) {
         if (shouldLog(Log.ERROR)) logInternal(Log.ERROR, tag, message(), t)
+    }
+
+    fun w(t: Throwable?) {
+        if (shouldLog(Log.WARN)) logInternal(Log.WARN, message = t?.stackTraceToString() ?: "Unknown error", t = t)
+    }
+
+    inline fun w(t: Throwable?, tag: String, crossinline message: () -> String) {
+        if (shouldLog(Log.WARN)) logInternal(Log.WARN, tag, message(), t)
+    }
+
+    fun wtf(t: Throwable?) {
+        if (shouldLog(Log.ASSERT)) logInternal(Log.ASSERT, message = t?.stackTraceToString() ?: "Unknown error", t = t)
     }
 
     fun wtf(message: String, vararg args: Any?) {

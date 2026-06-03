@@ -67,6 +67,8 @@ object AwLogFileManager {
     /**
      * 压缩旧日志文件（非今天的 .txt 文件会被压缩为 .gz 并删除原文件）。
      *
+     * 仅操作文件名前缀为 `log_`、后缀为 `.txt` 且非当天的文件。
+     *
      * 此方法为阻塞操作，必须在后台线程调用。
      *
      * @param logDir 日志文件所在目录路径
@@ -144,6 +146,7 @@ object AwLogFileManager {
      * @param logDir 日志文件所在目录路径
      * @return 可用空间的字节数，目录不存在时返回 0
      */
+    @Deprecated("Use File(logDir).usableSpace directly", ReplaceWith("File(logDir).usableSpace"))
     @JvmStatic
     fun getAvailableSpace(logDir: String): Long {
         val dir = File(logDir)
@@ -163,6 +166,7 @@ object AwLogFileManager {
     @WorkerThread
     @JvmStatic
     fun exportLogs(logDir: String, outputFile: File): File? {
+        outputFile.parentFile?.mkdirs()
         val dir = File(logDir)
         if (!dir.exists()) return null
 

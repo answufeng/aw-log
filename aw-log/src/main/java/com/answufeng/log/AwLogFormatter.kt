@@ -40,6 +40,7 @@ interface AwLogFormatter {
         @JvmStatic
         fun compact(): AwLogFormatter = CompactLogFormatter
 
+        @Deprecated("Use default() instead", ReplaceWith("default()"))
         @JvmStatic
         fun verbose(): AwLogFormatter = DefaultLogFormatter
     }

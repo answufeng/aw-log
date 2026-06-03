@@ -47,7 +47,8 @@ class AwDesensitizeInterceptor private constructor(
     data class DesensitizeRule(
         val name: String,
         val pattern: Regex,
-        val strategy: Strategy = Strategy.PARTIAL
+        val strategy: Strategy = Strategy.PARTIAL,
+        val replace: ((MatchResult) -> String)? = null
     )
 
     override fun intercept(chain: AwLogInterceptor.Chain): AwLogInterceptor.LogResult {
@@ -55,7 +56,7 @@ class AwDesensitizeInterceptor private constructor(
             var message = chain.message
             for (rule in rules) {
                 message = message.replace(rule.pattern) { matchResult ->
-                    rule.strategy.mask(matchResult.value)
+                    rule.replace?.invoke(matchResult) ?: rule.strategy.mask(matchResult.value)
                 }
             }
             chain.proceed(message, chain.tag)
@@ -84,7 +85,8 @@ class AwDesensitizeInterceptor private constructor(
 
         /** key=value 规则（password/token/secret/api_key/access_key/auth），默认使用 [Strategy.FULL] 全掩码。 */
         @JvmField
-        val KEY_VALUE = DesensitizeRule("keyValue", Regex("""(?i)(password|token|secret|api_?key|access_?key|auth)\s*[=:]\s*\S+"""), Strategy.FULL)
+        val KEY_VALUE = DesensitizeRule("keyValue", Regex("""(?i)(password|token|secret|api_?key|access_?key|auth)(\s*[=:]\s*)\S+"""), Strategy.FULL, replace = { mr -> "${mr.groupValues[1]}${mr.groupValues[2]}******" })
+
 
         /**
          * 使用 DSL 创建脱敏拦截器。

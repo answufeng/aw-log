@@ -1,7 +1,5 @@
 # aw-log
 
-[![JitPack](https://jitpack.io/v/answufeng/aw-log.svg)](https://jitpack.io/#answufeng/aw-log)
-
 基于 [Timber](https://github.com/JakeWharton/timber) 的 Android 日志库：**Logcat**、**文件落盘**、**崩溃回调**、**拦截链 / 脱敏**、**格式化**、**日志文件压缩 / 导出 / 搜索**。
 
 如果你只想最快接入并打出第一条日志，直接看下面的「5 分钟上手（最小接入）」即可；其它内容都可以后置按需查阅。
@@ -22,11 +20,11 @@ dependencyResolutionManagement {
 
 // app/build.gradle.kts
 dependencies {
-    implementation("com.github.answufeng:aw-log:1.0.2")
+    implementation("com.github.answufeng:aw-log:1.0.3")
 }
 ```
 
-`implementation` 中的 **版本号与 Git / JitPack 的 tag 一致**（上例为 `1.0.2`）。
+`implementation` 中的 **版本号与 Git / JitPack 的 tag 一致**（上例为 `1.0.3`）。
 
 ### 2) 初始化（Application）
 
@@ -68,10 +66,7 @@ AwLogger.d("Hello aw-log")
 | 项 | 最低版本 |
 |----|----------|
 | Android minSdk | 24 |
-| Kotlin | 2.0+ |
-| AGP | 8.0+ |
 | Timber | 5.0.1 |
-| Demo compileSdk / targetSdk（验证用） | 35 |
 
 ---
 
@@ -87,7 +82,7 @@ AwLogger.d("Hello aw-log")
 | **AwLogFormatter** | 文件行格式；compact / verbose / DSL 自定义 |
 | **AwLogFileManager** | 压缩、ZIP 导出、清理、按时间删、关键词搜索（含 .gz） |
 | **AwLogListener** | 旁路监听（注意线程，勿在回调里同步网络） |
-| 其它 | JSON/XML 美化（有大小上限）、Lambda 懒求值、`isLoggable` / `isFileLoggable`、DSL 初始化 |
+| 其它 | JSON/XML 美化（有大小上限）、Lambda 懒求值、`isLoggable` / `isFileLoggable`、DSL 初始化、队列容量可配、按天数清理 |
 
 ---
 
@@ -103,7 +98,7 @@ dependencyResolutionManagement {
 
 // app/build.gradle.kts
 dependencies {
-    implementation("com.github.answufeng:aw-log:1.0.2")
+    implementation("com.github.answufeng:aw-log:1.0.3")
 }
 ```
 
@@ -147,10 +142,12 @@ AwLogger.d("Net", "timeout: %s", url)
 AwLogger.d { "body=${response}" }
 AwLogger.e(t, "API", "code=%d", code)
 AwLogger.json(json, "API")
+AwLogger.wtf("critical: %s", msg)
 AwLogger.xml(xml, "API")
 
 if (AwLogger.isLoggable(Log.DEBUG)) { /* 昂贵字符串只在这里拼 */ }
 
+AwLogger.wtf("critical: %s", msg)  // ASSERT 级别
 AwLogger.flush()   // 如 Activity.onDestroy
 AwLogger.reset()   // 测试或切换配置
 ```
@@ -214,6 +211,8 @@ AwLogFileManager.search(dir, "keyword")
 | `minPriority` | Int | `VERBOSE` | 全局最低级别 |
 | `fileFormatter` | AwLogFormatter | 默认 | 文件行格式 |
 | `rejectLogOnInterceptorFailure` | Boolean | `false` | 拦截器抛错时是否**丢弃**该条（`true` 更偏合规） |
+| `fileQueueSize` | Int | `1024` | 文件日志写入队列最大容量，超出后丢弃最旧日志 |
+| `maxFileAgeDays` | Long | `0` | 按最后修改时间清理超天数文件；`0` 不限制 |
 
 ---
 
@@ -275,6 +274,7 @@ AwLogFormatter / AwLogFileManager / AwLogListener
 - [ ] 脱敏规则覆盖业务字段。
 - [ ] 崩溃：`UncaughtExceptionHandler` 与第三方 SDK **只保留一套主导逻辑**。
 - [ ] 日志目录：优先应用专属路径（如 `cacheDir/logs`）。
+- [ ] 文件轮转与清理：验证 `maxFileCount` / `maxFileAgeDays` 按预期清理旧日志。
 - [ ] 发版前宿主 **release + R8** 冒烟（demo 已 minify）。
 
 ---
@@ -325,11 +325,11 @@ AwLogFormatter / AwLogFileManager / AwLogListener
 | 多进程写文件？ | 不支持；仅主进程开文件日志或自协调。 |
 | `fileLog` 且 `fileDir` 空？ | `init { }` 会抛 `IllegalArgumentException`；可用 `init(context){}` 自动目录。 |
 | 队列会 OOM 吗？ | 队列有上限，满则丢最旧 + Logcat 警告。 |
-| AGP 8.5+ 报 “requires core library desugaring”？ | 从 `1.0.2` 起库本身不再要求使用端开启 coreLibraryDesugaring；若你依赖了更旧版本，请在宿主 `:app` 启用 coreLibraryDesugaring。 |
+| AGP 8.5+ 报 “requires core library desugaring”？ | 库本身不要求使用端开启 coreLibraryDesugaring；若宿主项目依赖需要，请在 `:app` 启用。 |
 | ERROR 打两次 Logcat？ | 默认 `crashEchoToLogcat=null` 时与 DebugTree 不重复；见配置表。 |
-| 导出 ZIP 父目录不存在？ | `exportLogs` / `exportLogsAsync` 会 `mkdirs`，失败返回 `null`。 |
-| `clearBefore` 按什么删？ | 按文件 **lastModified**，非严格按文件名日期。 |
-| `.gz` 能搜吗？ | `search` 会读 `log_*.txt` 与 `log_*.txt.gz`。 |
+| 导出 ZIP 父目录不存在？ | `exportLogs` / `exportLogsAsync` 会自动 `mkdirs`，失败返回 `null`。 |
+| `clearBefore` 按什么删？ | 按文件 **lastModified**（非严格按文件名日期）；`strictFileDate = true` 时可按文件名 `yyyy-MM-dd` 提取日期严格过滤。 |
+| `.gz` 能搜吗？ | `search` 会读 `log_*.txt` 与 `log_*.txt.gz`（按 lastModified 从新到旧）。 |
 
 **Release 示例**：
 
@@ -345,19 +345,13 @@ AwLogger.init {
 
 ---
 
-## 迁移
-
-版本说明见 [MIGRATION.md](MIGRATION.md)。
-
 ---
 
 ## 演示
 
-模块 **`demo`**：开关组合、文件、脱敏、崩溃等；手测清单见 [demo/DEMO_MATRIX.md](demo/DEMO_MATRIX.md)。**勿在生产照搬全开。**
+模块 **`demo`**：开关组合、文件、脱敏、崩溃等。**勿在生产照搬全开。**
 
-**CI**：[`.github/workflows/ci.yml`](.github/workflows/ci.yml)。本地可参考：
-
-`./gradlew :aw-log:assembleRelease :aw-log:ktlintCheck :aw-log:lintRelease :demo:assembleRelease`
+**CI**：[`.github/workflows/ci.yml`](.github/workflows/ci.yml)。`./gradlew :aw-log:assembleRelease :aw-log:ktlintCheck :demo:assembleRelease`
 
 ---
 
@@ -365,6 +359,5 @@ AwLogger.init {
 
 Apache License 2.0，见 [LICENSE](LICENSE)。
 
----
 
-*文档更新：2026-04-27*
+
